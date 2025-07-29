@@ -118,7 +118,7 @@ CREATE TABLE `Sign` (
 );
 
 CREATE TABLE `VisitSign` (
-  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+ 
   `VisitId` bigint(20) NOT NULL,
   `SignId` smallint(6) NOT NULL,
   `SignValue` ENUM ('BT', 'Có DHBL', 'Không', '(+)', '(++)', '(+++)', '(+-)'),
@@ -135,3 +135,26 @@ ALTER TABLE
   `VisitTest` ADD UNIQUE `Visit_VisitTest`(`TestId`, `VisitId`);
 ALTER TABLE
   `VisitSign` ADD UNIQUE `Visit_VisitSign`(`SignId`, `VisitId`);
+
+ALTER TABLE VisitDrug
+  ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId),
+  ADD FOREIGN KEY (DrugId) REFERENCES Drug(DrugId); 
+
+ALTER TABLE VisitProcedure
+  ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId),
+  ADD FOREIGN KEY (ProcedureId) REFERENCES Procedure(ProcedureId);
+
+ALTER TABLE VisitTest
+  ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId),
+  ADD FOREIGN KEY (TestId) REFERENCES Test(TestId);
+
+ALTER TABLE VisitStaff
+  ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId),
+  ADD FOREIGN KEY (StaffId) REFERENCES Staff(StaffId);
+
+ALTER TABLE Staff
+  ADD FOREIGN KEY (DepartmentId) REFERENCES Department(DepartmentId);
+
+ALTER TABLE PatientDepartment
+  ADD FOREIGN KEY (PatientId) REFERENCES Patient(PatientId),
+  ADD FOREIGN KEY (DepartmentId) REFERENCES Department(DepartmentId),
