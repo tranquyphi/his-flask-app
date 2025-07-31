@@ -35,7 +35,6 @@ CREATE TABLE `Sign` (
   `SignDesc` varchar(100),
   `SignType` tinyint(1) DEFAULT 0 COMMENT '0 nếu là dấu hiệu cơ năng, 1 nếu là dấu hiệu thực thể',
   `SystemId` int(10) NOT NULL
-  
 );
 CREATE TABLE `Drug` (
   `DrugId` varchar(50) PRIMARY KEY NOT NULL,
@@ -86,22 +85,22 @@ CREATE TABLE `Template` (
 );
 --Template for signs to be used in each visit
 CREATE TABLE `SignTemplate` (
-  `SignTemplateId` smallint(6) NOT NULL,
+  `TemplateId` smallint(6) NOT NULL,
   `SignId` smallint(6) NOT NULL
 );
 --Template for tests to be used in each visit
 CREATE TABLE `TestTemplate` (
-  `TestTemplateId` smallint(6) NOT NULL,
+  `TemplateId` smallint(6) NOT NULL,
   `TestId` varchar(50) NOT NULL
 );
 --Template for drugs to be used in each visit
 CREATE TABLE `DrugTemplate` (
-  `DrugTemplateId` smallint(6) NOT NULL,
+  `TemplateId` smallint(6) NOT NULL,
   `DrugId` varchar(50) NOT NULL
 );
 --Template for procedures to be used in each visit
 CREATE TABLE `ProcTemplate` (
-  `ProcTemplateId` smallint(6) NOT NULL,
+  `TemplateId` smallint(6) NOT NULL,
   `ProcId` varchar(50) NOT NULL
 );
 -- The patient table, which contains the patients in the exam system
@@ -175,8 +174,7 @@ CREATE TABLE `VisitProc` (
   `ProcId` varchar(50),
   `ProcStatus` ENUM ('Ordered', 'In progress', 'Completed', 'Result') DEFAULT 'Ordered' COMMENT 'Trạng thái của thủ thuật',
   `ProcStaffId` smallint(6) DEFAULT NULL COMMENT 'Nhân viên thực hiện thủ thuật',
-  `ProcTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện',
-  
+  `ProcTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện'
 );
 
 --the test table, which records the tests indicated for each visit
@@ -264,12 +262,12 @@ ALTER TABLE `VisitDrug`
 
 ALTER TABLE `VisitProc`
   ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId),
-  ADD FOREIGN KEY (ProcId) REFERENCES Proc(ProcId);
+  ADD FOREIGN KEY (ProcId) REFERENCES Proc(ProcId),
   ADD FOREIGN KEY (ProcStaffId) REFERENCES Staff(StaffId);
 
 ALTER TABLE `VisitTest`
   ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId),
-  ADD FOREIGN KEY (TestId) REFERENCES Test(TestId);
+  ADD FOREIGN KEY (TestId) REFERENCES Test(TestId),
   ADD FOREIGN KEY (TestStaffId) REFERENCES Staff(StaffId);
 
 ALTER TABLE `VisitStaff`
