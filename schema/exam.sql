@@ -128,14 +128,9 @@ CREATE TABLE `PatientDepartment` (
 CREATE TABLE `Visit` (
   `VisitId` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `PatientId` int(10) NOT NULL COMMENT 'Mã bệnh nhân',
-
   `DepartmentId` smallint(6) NOT NULL,
   `VisitPurpose` ENUM ('Thường quy','Cấp cứu', 'Phòng khám','Nhận bệnh', 'Bệnh án',  'Đột xuất', 'Hội chẩn', 'Xuất viện', 'Tái khám','Khám chuyên khoa') COMMENT 'Loại của lần thăm khám',
   `VisitTime` datetime,
-  `TestTemplateId` smallint(6) COMMENT 'Tập mẫu triệu chứng',
-  `SignTemplateId` smallint(6) COMMENT 'Tập mẫu dấu hiệu',
-  `DrugTemplateId` smallint(6) COMMENT 'Tập mẫu thuốc',
-  `ProcTemplateId` smallint(6) COMMENT 'Tập mẫu thủ thuật',
   `StaffId` smallint(6) NOT NULL COMMENT 'Nhân viên thăm khám'
 );
 -- For each visit there is a records of signs, images,drugs, procedures, tests, and staff involved. 
@@ -148,15 +143,17 @@ CREATE TABLE `VisitImage` (
 );
 --The sign table, which records the actual signs for each visit
 -- A visit can have multiple signs associated with it
+-- Signs can be from templates or custom entries by staff
 CREATE TABLE `VisitSign` (
   `VisitId` bigint(20) NOT NULL,
   `SignId` smallint(6),
   `SignValue` ENUM ('BT', 'Có DHBL', 'Không', 'Ít', 'Vừa', 'Nhiều','Nhẹ','Tăng','Giảm',"Như cũ"),
   `FollowUp` tinyint(1) DEFAULT 0,
   `ForEmr` tinyint(1) DEFAULT 0,
-  `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm'
+  `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)'
 );
 --the drug table, which records the drugs prescribed for each visit
+-- Drugs can be from templates or custom entries by staff
 CREATE TABLE `VisitDrug` (
   `VisitId` bigint(20) NOT NULL,
   `DrugId` varchar(50),
@@ -164,20 +161,23 @@ CREATE TABLE `VisitDrug` (
   `DrugQuantity` double,
   `DrugTimes` varchar(100),
   `DrugAtTime` datetime,
-  `Note` varchar(100)
+  `Note` varchar(100),
+  `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)'
 );
 
 --the procedure table, which records the procedures performed for each visit
-    
+-- Procedures can be from templates or custom entries by staff
 CREATE TABLE `VisitProc` (
   `VisitId` bigint(20) NOT NULL,
   `ProcId` varchar(50),
   `ProcStatus` ENUM ('Ordered', 'In progress', 'Completed', 'Result') DEFAULT 'Ordered' COMMENT 'Trạng thái của thủ thuật',
   `ProcStaffId` smallint(6) DEFAULT NULL COMMENT 'Nhân viên thực hiện thủ thuật',
-  `ProcTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện'
+  `ProcTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện',
+  `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)'
 );
 
 --the test table, which records the tests indicated for each visit
+-- Tests can be from templates or custom entries by staff
 CREATE TABLE `VisitTest` (
   `VisitId` bigint(20) NOT NULL,
   `TestId` varchar(50),
@@ -185,7 +185,8 @@ CREATE TABLE `VisitTest` (
   `TestStaffId` smallint(6) DEFAULT NULL COMMENT 'Nhân viên thực hiện xét nghiệm',
   `TestTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện',
   `TestResult` varchar(255) DEFAULT NULL COMMENT 'Kết quả',
-  `TestConclusion` varchar(20)   
+  `TestConclusion` varchar(20),
+  `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)'
 );
 
 --the visit staff table, which records the staff involved in each visit
@@ -241,11 +242,7 @@ ALTER TABLE  `VisitStaff` ADD UNIQUE `Visit_VisitStaff`(`StaffId`, `VisitId`);
 ALTER TABLE `Visit`
   ADD FOREIGN KEY (PatientId) REFERENCES Patient(PatientId),
   ADD FOREIGN KEY (DepartmentId) REFERENCES Department(DepartmentId),
-  ADD FOREIGN KEY (StaffId) REFERENCES Staff(StaffId),
-  ADD FOREIGN KEY (TestTemplateId) REFERENCES Template(TemplateId),
-  ADD FOREIGN KEY (SignTemplateId) REFERENCES Template(TemplateId),
-  ADD FOREIGN KEY (DrugTemplateId) REFERENCES Template(TemplateId),
-  ADD FOREIGN KEY (ProcTemplateId) REFERENCES Template(TemplateId);
+  ADD FOREIGN KEY (StaffId) REFERENCES Staff(StaffId);
 
 ALTER table `VisitImage`
   ADD FOREIGN KEY (VisitId) REFERENCES Visit(VisitId);
