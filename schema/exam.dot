@@ -1,0 +1,41 @@
+digraph hospital_erd {
+    rankdir=TB;
+    node [shape=record, style=filled, fillcolor=lightblue];
+    edge [color=gray];
+    
+    Department [label="{<table>Department|DepartmentType : ENUM\l}"];
+    Staff [label="{<table>Staff|StaffRole : ENUM\lStaffAvailable : boolean\l}"];
+    BodySystem [label="{<table>BodySystem|}"];
+    BodySite [label="{<table>BodySite|}"];
+    Sign [label="{<table>Sign|SignType : tinyint(1)\l}"];
+    Drug [label="{<table>Drug|DrugNote : varchar(100)\l}"];
+    Proc [label="{<table>Proc|ProcNote : varchar(100)\l}"];
+    Test [label="{<table>Test|TestNote : varchar(100)\l}"];
+    Template [label="{<table>Template|DepartmentId : smallint(6)\lTemplateGroup : ENUM\lTemplateType : ENUM\l}"];
+    SignTemplate [label="{<table>SignTemplate|}"];
+    TestTemplate [label="{<table>TestTemplate|}"];
+    DrugTemplate [label="{<table>DrugTemplate|}"];
+    ProcTemplate [label="{<table>ProcTemplate|}"];
+    Patient [label="{<table>Patient|PatientGender : ENUM\lPatientAge : int(3)\lAllergy : varchar(255)\lHistory : text\lPatientImage : longblob\lPatientNote : varchar(100)\l}"];
+    PatientDepartment [label="{<table>PatientDepartment|Current : tinyint(1)\l}"];
+    Visit [label="{<table>Visit|PatientId : int(10)\lVisitPurpose : ENUM\lStaffId : smallint(6)\l}"];
+    VisitImage [label="{<table>VisitImage|}"];
+    VisitSign [label="{<table>VisitSign|BodySiteId : int(5)\lLeftRight : ENUM\lSection : ENUM\lUpperLower : ENUM\lFrontBack : ENUM\lSignValue : ENUM\lIsCustom : tinyint(1)\l}"];
+    VisitDrug [label="{<table>VisitDrug|IsCustom : tinyint(1)\l}"];
+    VisitProc [label="{<table>VisitProc|ProcStatus : ENUM\lProcStaffId : smallint(6)\lProcTime : datetime\lIsCustom : tinyint(1)\l}"];
+    VisitTest [label="{<table>VisitTest|TestStatus : ENUM\lTestStaffId : smallint(6)\lTestTime : datetime\lTestResult : varchar(255)\lIsCustom : tinyint(1)\l}"];
+    VisitStaff [label="{<table>VisitStaff|}"];
+
+    // Relationships
+    Template -> Department [label="DepartmentId"];
+    Template -> Department [label="DepartmentId"];
+    Template -> Department [label="DepartmentId"];
+    Visit -> Patient [label="PatientId"];
+    Visit -> Patient [label="PatientId"];
+    Template -> Department [label="DepartmentId"];
+    Visit -> Staff [label="StaffId"];
+    VisitSign -> BodySite [label="BodySiteId"];
+    VisitProc -> Staff [label="ProcStaffId"];
+    VisitTest -> Staff [label="TestStaffId"];
+    Visit -> Staff [label="StaffId"];
+}

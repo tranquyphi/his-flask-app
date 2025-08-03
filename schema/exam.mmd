@@ -1,0 +1,116 @@
+erDiagram
+    Department {
+        ENUM DepartmentType
+    }
+
+    Staff {
+        ENUM StaffRole
+        boolean StaffAvailable
+    }
+
+    BodySystem {
+    }
+
+    BodySite {
+    }
+
+    Sign {
+        tinyint(1) SignType
+    }
+
+    Drug {
+        varchar(100) DrugNote
+    }
+
+    Proc {
+        varchar(100) ProcNote
+    }
+
+    Test {
+        varchar(100) TestNote
+    }
+
+    Template {
+        smallint(6) DepartmentId
+        ENUM TemplateGroup
+        ENUM TemplateType
+    }
+
+    SignTemplate {
+    }
+
+    TestTemplate {
+    }
+
+    DrugTemplate {
+    }
+
+    ProcTemplate {
+    }
+
+    Patient {
+        ENUM PatientGender
+        int(3) PatientAge
+        varchar(255) Allergy
+        text History
+        longblob PatientImage
+        varchar(100) PatientNote
+    }
+
+    PatientDepartment {
+        tinyint(1) Current
+    }
+
+    Visit {
+        int(10) PatientId
+        ENUM VisitPurpose
+        smallint(6) StaffId
+    }
+
+    VisitImage {
+    }
+
+    VisitSign {
+        int(5) BodySiteId
+        ENUM LeftRight
+        ENUM Section
+        ENUM UpperLower
+        ENUM FrontBack
+        ENUM SignValue
+        tinyint(1) IsCustom
+    }
+
+    VisitDrug {
+        tinyint(1) IsCustom
+    }
+
+    VisitProc {
+        ENUM ProcStatus
+        smallint(6) ProcStaffId
+        datetime ProcTime
+        tinyint(1) IsCustom
+    }
+
+    VisitTest {
+        ENUM TestStatus
+        smallint(6) TestStaffId
+        datetime TestTime
+        varchar(255) TestResult
+        tinyint(1) IsCustom
+    }
+
+    VisitStaff {
+    }
+
+    Department ||--o{ Department : has
+    Sign ||--o{ Sign : has
+    Template ||--o{ Template : has
+    Proc ||--o{ Proc : has
+    Drug ||--o{ Drug : has
+    Test ||--o{ Test : has
+    Patient ||--o{ Patient : has
+    Staff ||--o{ Staff : has
+    Visit ||--o{ Visit : has
+    VisitSign ||--o{ BodySite : has
+    VisitProc ||--o{ Staff : has
+    VisitTest ||--o{ Staff : has

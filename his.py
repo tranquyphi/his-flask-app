@@ -18,8 +18,8 @@ def get_patients():
     """Get all patients - no auth check for now"""
     # TODO: Add @require_auth later
     patients = get_all_patients()  # Implement with database
-    return jsonify({'patients': patients})
 
+    return "Patients: " 
 @app.route('/api/patients', methods=['POST'])
 def create_patient():
     """Create patient - no auth check for now"""
