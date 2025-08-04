@@ -8,9 +8,11 @@ from datetime import datetime
 import os
 from models import (
     create_app, db, init_database, test_connection,
-    get_all_patients, get_patient_by_id, create_patient_record, 
-    update_patient_record, create_visit_record, get_visits_by_patient,
-    get_staff_by_department, Patient, Visit, Staff, Department
+    get_all_patients, get_all_patients_with_department, get_all_staff_with_department,
+    get_all_visits_with_details, get_patient_by_id, get_patient_with_department_by_id,
+    create_patient_record, update_patient_record, create_visit_record, get_visits_by_patient,
+    get_staff_by_department, Patient, Visit, Staff, Department,
+    PatientWithDepartment, StaffWithDepartment, VisitWithDetails
 )
 from environment import create_example_routes
 
@@ -22,27 +24,95 @@ app = create_app(config_name)
 create_example_routes(app)
 
 # ==========================================
+# HTML Routes for UI
+# ==========================================
+
+@app.route('/')
+def index():
+    """Dashboard/Home page"""
+    return render_template('dashboard.html')
+
+@app.route('/dashboard')
+def dashboard():
+    """Dashboard page"""
+    return render_template('dashboard.html')
+
+@app.route('/patients')
+def patients_page():
+    """Patients management page"""
+    return render_template('patients.html')
+
+@app.route('/patients/<patient_id>')
+def patient_detail(patient_id):
+    """Patient detail page"""
+    try:
+        patient = get_patient_by_id(patient_id)
+        if patient:
+            return render_template('patient_detail.html', patient=patient)
+        else:
+            return render_template('404.html'), 404
+    except Exception as e:
+        return render_template('500.html'), 500
+
+@app.route('/patients/<patient_id>/visits')
+def patient_visits(patient_id):
+    """Patient visits page"""
+    try:
+        patient = get_patient_by_id(patient_id)
+        if patient:
+            visits = get_visits_by_patient(patient_id)
+            return render_template('patient_visits.html', patient=patient, visits=visits)
+        else:
+            return render_template('404.html'), 404
+    except Exception as e:
+        return render_template('500.html'), 500
+
+@app.route('/visits')
+def visits_page():
+    """Visits management page"""
+    return render_template('visits.html')
+
+@app.route('/staff')
+def staff_page():
+    """Staff management page"""
+    return render_template('staff.html')
+
+@app.route('/departments')
+def departments_page():
+    """Departments management page"""
+    return render_template('departments.html')
+
+@app.route('/drugs')
+def drugs_page():
+    """Drugs management page"""
+    return render_template('drugs.html')
+
+@app.route('/tests')
+def tests_page():
+    """Tests management page"""
+    return render_template('tests.html')
+
+@app.route('/procedures')
+def procedures_page():
+    """Procedures management page"""
+    return render_template('procedures.html')
+
+@app.route('/templates')
+def templates_page():
+    """Templates management page"""
+    return render_template('templates.html')
+
+# ==========================================
 # PHASE 1: Basic Routes (No Authorization)
 # ==========================================
 
 # Patient Management
 @app.route('/api/patients', methods=['GET'])
 def get_patients():
-    """Get all patients - no auth check for now"""
+    """Get all patients with department information - no auth check for now"""
     # TODO: Add @require_auth later
     try:
-        patients = get_all_patients()
-        patients_data = []
-        for patient in patients:
-            patients_data.append({
-                'PatientId': patient.PatientId,
-                'PatientName': patient.PatientName,
-                'PatientGender': patient.PatientGender,
-                'PatientAge': patient.PatientAge,
-                'PatientAddress': patient.PatientAddress,
-                'Allergy': patient.Allergy,
-                'PatientNote': patient.PatientNote
-            })
+        patients_data = get_all_patients_with_department()
         return jsonify({'patients': patients_data})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -58,6 +128,28 @@ def create_patient():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/patients/<patient_id>', methods=['GET'])
+def get_patient(patient_id):
+    """Get single patient by ID"""
+    try:
+        patient = get_patient_by_id(patient_id)
+        if patient:
+            patient_data = {
+                'PatientId': patient.PatientId,
+                'PatientName': patient.PatientName,
+                'PatientGender': patient.PatientGender,
+                'PatientAge': patient.PatientAge,
+                'PatientAddress': patient.PatientAddress,
+                'Allergy': patient.Allergy,
+                'History': patient.History,
+                'PatientNote': patient.PatientNote
+            }
+            return jsonify({'patient': patient_data})
+        else:
+            return jsonify({'error': 'Patient not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/patients/<patient_id>', methods=['PUT'])
 def update_patient(patient_id):
     """Update patient - no auth check for now"""
@@ -70,6 +162,25 @@ def update_patient(patient_id):
         else:
             return jsonify({'error': 'Patient not found'}), 404
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/patients/<patient_id>', methods=['DELETE'])
+def delete_patient(patient_id):
+    """Delete patient"""
+    try:
+        # Check if patient exists
+        patient = get_patient_by_id(patient_id)
+        if not patient:
+            return jsonify({'error': 'Patient not found'}), 404
+        
+        # TODO: Add checks for related records (visits, etc.)
+        # For now, just delete the patient
+        db.session.delete(patient)
+        db.session.commit()
+        
+        return jsonify({'success': True, 'message': 'Patient deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
 # Visit Management
@@ -123,13 +234,49 @@ def execute_test(visit_id, test_id):
     return jsonify({'message': 'Test execution recorded'})
 
 # Template Management
+@app.route('/api/staff', methods=['GET'])
+def get_staff():
+    """Get all staff with department information"""
+    try:
+        staff_data = get_all_staff_with_department()
+        return jsonify({'staff': staff_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/departments', methods=['GET'])
+def get_departments():
+    """Get all departments"""
+    try:
+        departments = Department.query.all()
+        departments_data = []
+        for dept in departments:
+            departments_data.append({
+                'DepartmentId': dept.DepartmentId,
+                'DepartmentName': dept.DepartmentName,
+                'DepartmentType': dept.DepartmentType
+            })
+        return jsonify({'departments': departments_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visits', methods=['GET'])
+def get_visits():
+    """Get all visits with detailed information"""
+    try:
+        visits_data = get_all_visits_with_details()
+        return jsonify({'visits': visits_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/templates', methods=['GET'])
 def get_templates():
-    """Get templates - no auth check for now"""
+    """Get all templates - no auth check for now"""
     # TODO: Add @require_auth later
-    # TODO: Filter by department after auth implementation
-    templates = get_all_templates()
-    return jsonify({'templates': templates})
+    try:
+        # For now return empty list as we haven't implemented templates
+        return jsonify({'templates': []})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/templates', methods=['POST'])
 def create_template():

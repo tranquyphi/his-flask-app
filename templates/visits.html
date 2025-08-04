@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Visits Management - HIS{% endblock %}
+
+{% block page_title %}
+<i class="fas fa-calendar-check me-2"></i>Visits Management
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-md-6">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#visitModal" onclick="showVisitModal()">
+            <i class="fas fa-plus me-1"></i>New Visit
+        </button>
+        <button class="btn btn-outline-secondary ms-2" onclick="refreshVisits()">
+            <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+    </div>
+    <div class="col-md-6">
+        <div class="input-group">
+            <input type="text" class="form-control" id="searchInput" placeholder="Search visits...">
+            <button class="btn btn-outline-secondary" type="button" onclick="searchVisits()">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="visits-table"></div>
+
+<!-- Visit Modal -->
+<div class="modal fade" id="visitModal" tabindex="-1" aria-labelledby="visitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="visitModalLabel">Add New Visit</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="visitForm">
+                    <input type="hidden" id="visitId" name="visit_id">
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="patientId" class="form-label">Patient *</label>
+                            <select class="form-select" id="patientId" name="patient_id" required>
+                                <option value="">Select Patient</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="staffId" class="form-label">Attending Staff *</label>
+                            <select class="form-select" id="staffId" name="staff_id" required>
+                                <option value="">Select Staff</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="visitDate" class="form-label">Visit Date *</label>
+                            <input type="datetime-local" class="form-control" id="visitDate" name="visit_date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="visitType" class="form-label">Visit Type</label>
+                            <select class="form-select" id="visitType" name="visit_type">
+                                <option value="">Select Type</option>
+                                <option value="Consultation">Consultation</option>
+                                <option value="Follow-up">Follow-up</option>
+                                <option value="Emergency">Emergency</option>
+                                <option value="Surgery">Surgery</option>
+                                <option value="Check-up">Check-up</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="chiefComplaint" class="form-label">Chief Complaint</label>
+                        <textarea class="form-control" id="chiefComplaint" name="chief_complaint" rows="2" placeholder="Patient's main concern or reason for visit"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="diagnosis" class="form-label">Diagnosis</label>
+                        <textarea class="form-control" id="diagnosis" name="diagnosis" rows="2" placeholder="Medical diagnosis"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="treatment" class="form-label">Treatment Plan</label>
+                        <textarea class="form-control" id="treatment" name="treatment" rows="3" placeholder="Treatment recommendations and plan"></textarea>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="Scheduled">Scheduled</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="followUpDate" class="form-label">Follow-up Date</label>
+                            <input type="date" class="form-control" id="followUpDate" name="follow_up_date">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Additional Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes or observations"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="saveVisit()">Save Visit</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/visits.js"></script>
+{% endblock %}
