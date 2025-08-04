@@ -3,10 +3,23 @@ Flask Application Structure - Phase 1 (No Authorization)
 Basic CRUD operations for testing business logic
 """
 
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, session
 from datetime import datetime
+import os
+from models import (
+    create_app, db, init_database, test_connection,
+    get_all_patients, get_patient_by_id, create_patient_record, 
+    update_patient_record, create_visit_record, get_visits_by_patient,
+    get_staff_by_department, Patient, Visit, Staff, Department
+)
+from environment import create_example_routes
 
-app = Flask(__name__)
+# Create app with database configuration
+config_name = os.getenv('FLASK_ENV', 'development')
+app = create_app(config_name)
+
+# Add environment variable demonstration routes
+create_example_routes(app)
 
 # ==========================================
 # PHASE 1: Basic Routes (No Authorization)
@@ -17,37 +30,64 @@ app = Flask(__name__)
 def get_patients():
     """Get all patients - no auth check for now"""
     # TODO: Add @require_auth later
-    patients = get_all_patients()  # Implement with database
+    try:
+        patients = get_all_patients()
+        patients_data = []
+        for patient in patients:
+            patients_data.append({
+                'PatientId': patient.PatientId,
+                'PatientName': patient.PatientName,
+                'PatientGender': patient.PatientGender,
+                'PatientAge': patient.PatientAge,
+                'PatientAddress': patient.PatientAddress,
+                'Allergy': patient.Allergy,
+                'PatientNote': patient.PatientNote
+            })
+        return jsonify({'patients': patients_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-    return "Patients: " 
 @app.route('/api/patients', methods=['POST'])
 def create_patient():
     """Create patient - no auth check for now"""
     # TODO: Add @require_role(StaffRole.BAC_SI, StaffRole.DIEU_DUONG) later
-    data = request.json
-    patient_id = create_patient_record(data)
-    return jsonify({'patient_id': patient_id, 'message': 'Patient created'})
+    try:
+        data = request.json
+        patient_id = create_patient_record(data)
+        return jsonify({'patient_id': patient_id, 'message': 'Patient created'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/patients/<int:patient_id>', methods=['PUT'])
+@app.route('/api/patients/<patient_id>', methods=['PUT'])
 def update_patient(patient_id):
     """Update patient - no auth check for now"""
     # TODO: Add @require_permission('Patient', 'update') later
-    data = request.json
-    update_patient_record(patient_id, data)
-    return jsonify({'message': 'Patient updated'})
+    try:
+        data = request.json
+        success = update_patient_record(patient_id, data)
+        if success:
+            return jsonify({'message': 'Patient updated'})
+        else:
+            return jsonify({'error': 'Patient not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Visit Management
 @app.route('/api/visits', methods=['POST'])
 def create_visit():
     """Create visit - no auth check for now"""
     # TODO: Add @require_auth + @require_permission('Visit', 'create') later
-    data = request.json
-    
-    # For testing, use hardcoded staff (will be from session later)
-    data['StaffId'] = 1  # TODO: Get from session after auth implementation
-    data['DepartmentId'] = 1  # TODO: Get from staff department after auth
-    
-    visit_id = create_visit_record(data)
+    try:
+        data = request.json
+        
+        # For testing, use hardcoded staff (will be from session later)
+        data['StaffId'] = 1  # TODO: Get from session after auth implementation
+        data['DepartmentId'] = 1  # TODO: Get from staff department after auth
+        
+        visit_id = create_visit_record(data)
+        return jsonify({'visit_id': visit_id, 'message': 'Visit created'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
     return jsonify({'visit_id': visit_id, 'message': 'Visit created'})
 
 @app.route('/api/visits/<int:visit_id>/drugs', methods=['POST'])
@@ -132,55 +172,205 @@ def get_current_user():
     return jsonify({'message': 'No user logged in'})
 
 # ==========================================
-# Placeholder Functions (Implement with Database)
+# Additional API Routes
 # ==========================================
 
-def get_all_patients():
-    """TODO: Implement with SQLAlchemy"""
-    return []
+@app.route('/api/patients/<patient_id>/visits', methods=['GET'])
+def get_patient_visits(patient_id):
+    """Get all visits for a patient"""
+    try:
+        visits = get_visits_by_patient(patient_id)
+        visits_data = []
+        for visit in visits:
+            visits_data.append({
+                'VisitId': visit.VisitId,
+                'PatientId': visit.PatientId,
+                'DepartmentId': visit.DepartmentId,
+                'VisitPurpose': visit.VisitPurpose,
+                'VisitTime': visit.VisitTime.isoformat() if visit.VisitTime else None,
+                'StaffId': visit.StaffId
+            })
+        return jsonify({'visits': visits_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-def create_patient_record(data):
-    """TODO: Implement with SQLAlchemy"""
-    return 1
+@app.route('/api/departments', methods=['GET'])
+def get_departments():
+    """Get all departments"""
+    try:
+        departments = Department.query.all()
+        departments_data = []
+        for dept in departments:
+            departments_data.append({
+                'DepartmentId': dept.DepartmentId,
+                'DepartmentName': dept.DepartmentName,
+                'DepartmentType': dept.DepartmentType
+            })
+        return jsonify({'departments': departments_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-def update_patient_record(patient_id, data):
-    """TODO: Implement with SQLAlchemy"""
-    pass
+@app.route('/api/staff', methods=['GET'])
+def get_all_staff():
+    """Get all staff"""
+    try:
+        staff = Staff.query.filter_by(StaffAvailable=True).all()
+        staff_data = []
+        for s in staff:
+            staff_data.append({
+                'StaffId': s.StaffId,
+                'StaffName': s.StaffName,
+                'StaffRole': s.StaffRole,
+                'DepartmentId': s.DepartmentId
+            })
+        return jsonify({'staff': staff_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
-def create_visit_record(data):
-    """TODO: Implement with SQLAlchemy"""
-    return 1
+# ==========================================
+# Additional Helper Functions
+# ==========================================
 
 def create_drug_prescription(visit_id, data):
-    """TODO: Implement with SQLAlchemy"""
-    return 1
+    """Create drug prescription for a visit"""
+    try:
+        from models import VisitDrug
+        prescription = VisitDrug(
+            VisitId=visit_id,
+            DrugId=data.get('DrugId'),
+            DrugRoute=data.get('DrugRoute'),
+            DrugQuantity=data.get('DrugQuantity'),
+            DrugTimes=data.get('DrugTimes'),
+            DrugAtTime=data.get('DrugAtTime'),
+            Note=data.get('Note'),
+            IsCustom=data.get('IsCustom', False)
+        )
+        db.session.add(prescription)
+        db.session.commit()
+        return f"{visit_id}-{data.get('DrugId')}"
+    except Exception as e:
+        print(f"Error creating drug prescription: {e}")
+        return 1
 
 def create_test_order(visit_id, data):
-    """TODO: Implement with SQLAlchemy"""
-    return 1
+    """Create test order for a visit"""
+    try:
+        from models import VisitTest
+        test_order = VisitTest(
+            VisitId=visit_id,
+            TestId=data.get('TestId'),
+            TestStatus='Ordered',
+            TestStaffId=data.get('TestStaffId'),
+            TestTime=data.get('TestTime'),
+            IsCustom=data.get('IsCustom', False)
+        )
+        db.session.add(test_order)
+        db.session.commit()
+        return f"{visit_id}-{data.get('TestId')}"
+    except Exception as e:
+        print(f"Error creating test order: {e}")
+        return 1
 
 def update_test_execution(visit_id, test_id, data):
-    """TODO: Implement with SQLAlchemy"""
-    pass
+    """Update test execution status and results"""
+    try:
+        from models import VisitTest
+        visit_test = VisitTest.query.filter_by(VisitId=visit_id, TestId=test_id).first()
+        if visit_test:
+            visit_test.TestStatus = data.get('TestStatus', visit_test.TestStatus)
+            visit_test.TestStaffId = data.get('TestStaffId', visit_test.TestStaffId)
+            visit_test.TestTime = data.get('TestTime', visit_test.TestTime)
+            visit_test.TestResult = data.get('TestResult', visit_test.TestResult)
+            visit_test.TestConclusion = data.get('TestConclusion', visit_test.TestConclusion)
+            db.session.commit()
+            return True
+        return False
+    except Exception as e:
+        print(f"Error updating test execution: {e}")
+        return False
 
 def get_all_templates():
-    """TODO: Implement with SQLAlchemy"""
-    return []
+    """Get all templates"""
+    try:
+        from models import Template
+        templates = Template.query.all()
+        templates_data = []
+        for template in templates:
+            templates_data.append({
+                'TemplateId': template.TemplateId,
+                'TemplateName': template.TemplateName,
+                'DepartmentId': template.DepartmentId,
+                'TemplateGroup': template.TemplateGroup,
+                'TemplateType': template.TemplateType
+            })
+        return templates_data
+    except Exception as e:
+        print(f"Error getting templates: {e}")
+        return []
 
 def create_template_record(data):
-    """TODO: Implement with SQLAlchemy"""
-    return 1
+    """Create a new template record"""
+    try:
+        from models import Template
+        template = Template(
+            TemplateName=data.get('TemplateName'),
+            DepartmentId=data.get('DepartmentId'),
+            TemplateGroup=data.get('TemplateGroup'),
+            TemplateType=data.get('TemplateType')
+        )
+        db.session.add(template)
+        db.session.commit()
+        return template.TemplateId
+    except Exception as e:
+        print(f"Error creating template: {e}")
+        return 1
 
 def get_staff_by_id(staff_id):
-    """TODO: Implement with SQLAlchemy"""
-    # Mock data for testing
-    mock_staff = {
-        1: {'StaffId': 1, 'StaffName': 'Dr. Nguyen', 'StaffRole': 'Bác sĩ', 'DepartmentId': 1},
-        2: {'StaffId': 2, 'StaffName': 'Nurse Linh', 'StaffRole': 'Điều dưỡng', 'DepartmentId': 1},
-        3: {'StaffId': 3, 'StaffName': 'Tech Duc', 'StaffRole': 'Kỹ thuật viên', 'DepartmentId': 1}
-    }
-    return mock_staff.get(staff_id)
+    """Get staff by ID - real database implementation"""
+    try:
+        staff = Staff.query.get(staff_id)
+        if staff:
+            return {
+                'StaffId': staff.StaffId,
+                'StaffName': staff.StaffName,
+                'StaffRole': staff.StaffRole,
+                'DepartmentId': staff.DepartmentId
+            }
+        return None
+    except Exception as e:
+        print(f"Error getting staff: {e}")
+        # Fallback to mock data for testing
+        mock_staff = {
+            1: {'StaffId': 1, 'StaffName': 'Dr. Nguyen', 'StaffRole': 'Bác sĩ', 'DepartmentId': 1},
+            2: {'StaffId': 2, 'StaffName': 'Nurse Linh', 'StaffRole': 'Điều dưỡng', 'DepartmentId': 1},
+            3: {'StaffId': 3, 'StaffName': 'Tech Duc', 'StaffRole': 'Kỹ thuật viên', 'DepartmentId': 1}
+        }
+        return mock_staff.get(staff_id)
+
+# ==========================================
+# Database Connection Test Route
+# ==========================================
+
+@app.route('/test/db-connection')
+def test_db_connection():
+    """Test database connection"""
+    try:
+        if test_connection():
+            return jsonify({'status': 'success', 'message': 'Database connection successful'})
+        else:
+            return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 if __name__ == '__main__':
-    app.secret_key = 'test-secret-key'  # Change in production
-    app.run(debug=True)
+    with app.app_context():
+        # Test database connection
+        print("Testing database connection...")
+        if test_connection():
+            print("✓ Database connection successful!")
+            print("✓ Starting Flask application...")
+        else:
+            print("✗ Database connection failed!")
+            print("Please check your database configuration.")
+    
+    app.run(debug=True, host='0.0.0.0', port=5000)

@@ -1,4 +1,4 @@
-CREATE DATABASE `examdb` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */;
+-- examdb.BodySite definition
 
 CREATE TABLE `BodySite` (
   `SiteId` int(5) NOT NULL AUTO_INCREMENT,
@@ -6,11 +6,17 @@ CREATE TABLE `BodySite` (
   PRIMARY KEY (`SiteId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=113 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.BodySystem definition
+
 CREATE TABLE `BodySystem` (
-  `SystemId` int(10) NOT NULL,
+  `SystemId` int(1) NOT NULL,
   `SystemName` varchar(50) NOT NULL,
   PRIMARY KEY (`SystemId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.Department definition
 
 CREATE TABLE `Department` (
   `DepartmentId` smallint(6) NOT NULL,
@@ -18,6 +24,9 @@ CREATE TABLE `Department` (
   `DepartmentType` enum('Nội trú','Cấp cứu','Phòng khám') DEFAULT NULL COMMENT 'Loại khoa',
   PRIMARY KEY (`DepartmentId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.Drug definition
 
 CREATE TABLE `Drug` (
   `DrugId` varchar(50) NOT NULL,
@@ -40,14 +49,8 @@ CREATE TABLE `Drug` (
   KEY `idx_drug_available` (`DrugAvailable`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `DrugTemplate` (
-  `TemplateId` smallint(6) NOT NULL,
-  `DrugId` varchar(50) NOT NULL,
-  UNIQUE KEY `DrugTemplate_Drug` (`DrugId`,`TemplateId`),
-  KEY `TemplateId` (`TemplateId`),
-  CONSTRAINT `DrugTemplate_ibfk_1` FOREIGN KEY (`DrugId`) REFERENCES `Drug` (`DrugId`),
-  CONSTRAINT `DrugTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- examdb.ICD definition
 
 CREATE TABLE `ICD` (
   `ICDCode` varchar(10) NOT NULL COMMENT 'Mã ICD',
@@ -56,11 +59,14 @@ CREATE TABLE `ICD` (
   PRIMARY KEY (`ICDCode`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.Patient definition
+
 CREATE TABLE `Patient` (
-  `PatientId` int(10) NOT NULL,
+  `PatientId` varchar(10) NOT NULL,
   `PatientName` varchar(100) DEFAULT NULL,
   `PatientGender` enum('Nam','Nữ','Khác') DEFAULT NULL COMMENT 'Giới tính',
-  `PatientAge` int(3) DEFAULT NULL COMMENT 'Tuổi',
+  `PatientAge` char(20) DEFAULT NULL COMMENT 'Tuổi',
   `PatientAddress` varchar(255) DEFAULT NULL,
   `Allergy` varchar(255) DEFAULT '' COMMENT 'Tiền sử dị ứng',
   `History` text DEFAULT NULL COMMENT 'Tiền sử bệnh',
@@ -69,17 +75,8 @@ CREATE TABLE `Patient` (
   PRIMARY KEY (`PatientId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `PatientDepartment` (
-  `PatientId` int(10) NOT NULL,
-  `DepartmentId` smallint(6) DEFAULT NULL,
-  `Current` tinyint(1) DEFAULT 0 COMMENT '1 nếu là khoa hiện tại của bệnh nhân',
-  `AdmissionType` enum('Vào khoa','Cấp cứu','Phòng khám','Khám chuyên khoa') DEFAULT 'Vào khoa',
-  UNIQUE KEY `PatientDepartment_Patient` (`PatientId`,`DepartmentId`),
-  KEY `DepartmentId` (`DepartmentId`),
-  KEY `idx_patient_current_dept` (`PatientId`,`Current`),
-  CONSTRAINT `PatientDepartment_ibfk_1` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`),
-  CONSTRAINT `PatientDepartment_ibfk_2` FOREIGN KEY (`PatientId`) REFERENCES `Patient` (`PatientId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- examdb.Proc definition
 
 CREATE TABLE `Proc` (
   `ProcId` varchar(50) NOT NULL,
@@ -93,33 +90,36 @@ CREATE TABLE `Proc` (
   PRIMARY KEY (`ProcId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `ProcTemplate` (
-  `TemplateId` smallint(6) NOT NULL,
-  `ProcId` varchar(50) NOT NULL,
-  UNIQUE KEY `ProcTemplate_Proc` (`ProcId`,`TemplateId`),
-  KEY `TemplateId` (`TemplateId`),
-  CONSTRAINT `ProcTemplate_ibfk_1` FOREIGN KEY (`ProcId`) REFERENCES `Proc` (`ProcId`),
-  CONSTRAINT `ProcTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
+
+-- examdb.PatientDepartment definition
+
+CREATE TABLE `PatientDepartment` (
+  `PatientId` varchar(10) NOT NULL,
+  `DepartmentId` smallint(6) DEFAULT NULL,
+  `Current` tinyint(1) DEFAULT 0 COMMENT '1 nếu là khoa hiện tại của bệnh nhân',
+  `At` timestamp NULL DEFAULT current_timestamp(),
+  UNIQUE KEY `PatientDepartment_Patient` (`PatientId`,`DepartmentId`),
+  KEY `DepartmentId` (`DepartmentId`),
+  KEY `idx_patient_current_dept` (`PatientId`,`Current`),
+  CONSTRAINT `PatientDepartment_ibfk_1` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.Sign definition
+
 CREATE TABLE `Sign` (
-  `SignId` smallint(6) NOT NULL,
+  `SignId` smallint(6) NOT NULL AUTO_INCREMENT,
   `SignDesc` varchar(100) DEFAULT NULL,
   `SignType` tinyint(1) DEFAULT 0 COMMENT '0 nếu là dấu hiệu cơ năng, 1 nếu là dấu hiệu thực thể',
-  `SystemId` int(10) NOT NULL,
+  `SystemId` int(1) NOT NULL,
+  `Speciality` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`SignId`),
   KEY `SystemId` (`SystemId`),
   CONSTRAINT `Sign_ibfk_1` FOREIGN KEY (`SystemId`) REFERENCES `BodySystem` (`SystemId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=679 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-CREATE TABLE `SignTemplate` (
-  `TemplateId` smallint(6) NOT NULL,
-  `SignId` smallint(6) NOT NULL,
-  UNIQUE KEY `SignTemplate_Sign` (`SignId`,`TemplateId`),
-  KEY `TemplateId` (`TemplateId`),
-  CONSTRAINT `SignTemplate_ibfk_1` FOREIGN KEY (`SignId`) REFERENCES `Sign` (`SignId`),
-  CONSTRAINT `SignTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- examdb.Staff definition
 
 CREATE TABLE `Staff` (
   `StaffId` smallint(6) NOT NULL,
@@ -133,8 +133,11 @@ CREATE TABLE `Staff` (
   CONSTRAINT `Staff_ibfk_1` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.Template definition
+
 CREATE TABLE `Template` (
-  `TemplateId` smallint(6) NOT NULL,
+  `TemplateId` smallint(6) NOT NULL AUTO_INCREMENT,
   `TemplateName` varchar(100) DEFAULT NULL,
   `DepartmentId` smallint(6) DEFAULT NULL COMMENT 'Khoa của tập mẫu',
   `TemplateGroup` enum('Test','Sign','Drug','Proc') DEFAULT NULL COMMENT 'Loại của tập mẫu',
@@ -142,7 +145,10 @@ CREATE TABLE `Template` (
   PRIMARY KEY (`TemplateId`),
   KEY `DepartmentId` (`DepartmentId`),
   CONSTRAINT `Template_ibfk_1` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.Test definition
 
 CREATE TABLE `Test` (
   `TestId` varchar(50) NOT NULL,
@@ -153,12 +159,15 @@ CREATE TABLE `Test` (
   `TestAvailable` tinyint(1) DEFAULT 1,
   `TestNote` varchar(100) DEFAULT '' COMMENT 'Ghi chú về xét nghiệm',
   `TestType` enum('XN','SA','XQ','CT','TDCN','NS') DEFAULT NULL,
-  `DepartmentId` smallint(6) DEFAULT NULL,
+  `InChargeDepartmentId` smallint(6) DEFAULT NULL,
   PRIMARY KEY (`TestId`),
-  KEY `Test_Department_FK` (`DepartmentId`),
+  KEY `Test_Department_FK` (`InChargeDepartmentId`),
   KEY `idx_test_available` (`TestAvailable`),
-  CONSTRAINT `Test_Department_FK` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`)
+  CONSTRAINT `Test_Department_FK` FOREIGN KEY (`InChargeDepartmentId`) REFERENCES `Department` (`DepartmentId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.TestTemplate definition
 
 CREATE TABLE `TestTemplate` (
   `TemplateId` smallint(6) NOT NULL,
@@ -169,9 +178,12 @@ CREATE TABLE `TestTemplate` (
   CONSTRAINT `TestTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.Visit definition
+
 CREATE TABLE `Visit` (
   `VisitId` bigint(20) NOT NULL AUTO_INCREMENT,
-  `PatientId` int(10) NOT NULL COMMENT 'Mã bệnh nhân',
+  `PatientId` varchar(10) NOT NULL COMMENT 'Mã bệnh nhân',
   `DepartmentId` smallint(6) NOT NULL,
   `VisitPurpose` enum('Thường quy','Cấp cứu','Phòng khám','Nhận bệnh','Bệnh án','Đột xuất','Hội chẩn','Xuất viện','Tái khám','Khám chuyên khoa') DEFAULT NULL COMMENT 'Loại của lần thăm khám',
   `VisitTime` datetime DEFAULT NULL,
@@ -181,10 +193,13 @@ CREATE TABLE `Visit` (
   KEY `StaffId` (`StaffId`),
   KEY `idx_visit_time` (`VisitTime`),
   KEY `idx_visit_patient_date` (`PatientId`,`VisitTime`),
-  CONSTRAINT `Visit_ibfk_1` FOREIGN KEY (`PatientId`) REFERENCES `Patient` (`PatientId`),
+  CONSTRAINT `Visit_Patient_FK` FOREIGN KEY (`PatientId`) REFERENCES `Patient` (`PatientId`),
   CONSTRAINT `Visit_ibfk_2` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`),
   CONSTRAINT `Visit_ibfk_3` FOREIGN KEY (`StaffId`) REFERENCES `Staff` (`StaffId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.VisitDiagnosis definition
 
 CREATE TABLE `VisitDiagnosis` (
   `VisitId` bigint(20) NOT NULL,
@@ -197,6 +212,9 @@ CREATE TABLE `VisitDiagnosis` (
   CONSTRAINT `VisitDiagnosis_ibfk_1` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`) ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.VisitDocuments definition
+
 CREATE TABLE `VisitDocuments` (
   `VisitId` bigint(20) NOT NULL,
   `document_links` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'Structured document links' CHECK (json_valid(`document_links`)),
@@ -204,6 +222,9 @@ CREATE TABLE `VisitDocuments` (
   KEY `VisitDocuments_Visit_FK` (`VisitId`),
   CONSTRAINT `VisitDocuments_Visit_FK` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.VisitDrug definition
 
 CREATE TABLE `VisitDrug` (
   `VisitId` bigint(20) NOT NULL,
@@ -220,6 +241,9 @@ CREATE TABLE `VisitDrug` (
   CONSTRAINT `VisitDrug_ibfk_2` FOREIGN KEY (`DrugId`) REFERENCES `Drug` (`DrugId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.VisitProc definition
+
 CREATE TABLE `VisitProc` (
   `VisitId` bigint(20) NOT NULL,
   `ProcId` varchar(50) DEFAULT NULL,
@@ -234,6 +258,9 @@ CREATE TABLE `VisitProc` (
   CONSTRAINT `VisitProc_ibfk_2` FOREIGN KEY (`ProcId`) REFERENCES `Proc` (`ProcId`),
   CONSTRAINT `VisitProc_ibfk_3` FOREIGN KEY (`ProcStaffId`) REFERENCES `Staff` (`StaffId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.VisitSign definition
 
 CREATE TABLE `VisitSign` (
   `VisitId` bigint(20) NOT NULL,
@@ -255,6 +282,9 @@ CREATE TABLE `VisitSign` (
   CONSTRAINT `VisitSign_ibfk_3` FOREIGN KEY (`BodySiteId`) REFERENCES `BodySite` (`SiteId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+
+-- examdb.VisitStaff definition
+
 CREATE TABLE `VisitStaff` (
   `VisitId` bigint(20) NOT NULL,
   `StaffId` smallint(6) NOT NULL,
@@ -263,6 +293,9 @@ CREATE TABLE `VisitStaff` (
   CONSTRAINT `VisitStaff_ibfk_1` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`),
   CONSTRAINT `VisitStaff_ibfk_2` FOREIGN KEY (`StaffId`) REFERENCES `Staff` (`StaffId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.VisitTest definition
 
 CREATE TABLE `VisitTest` (
   `VisitId` bigint(20) NOT NULL,
@@ -282,3 +315,24 @@ CREATE TABLE `VisitTest` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
+-- examdb.DrugTemplate definition
+
+CREATE TABLE `DrugTemplate` (
+  `TemplateId` smallint(6) NOT NULL,
+  `DrugId` varchar(50) NOT NULL,
+  UNIQUE KEY `DrugTemplate_Drug` (`DrugId`,`TemplateId`),
+  KEY `TemplateId` (`TemplateId`),
+  CONSTRAINT `DrugTemplate_ibfk_1` FOREIGN KEY (`DrugId`) REFERENCES `Drug` (`DrugId`),
+  CONSTRAINT `DrugTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- examdb.SignTemplate definition
+
+CREATE TABLE `SignTemplate` (
+  `TemplateId` smallint(6) NOT NULL,
+  `SignId` smallint(6) NOT NULL,
+  UNIQUE KEY `SignTemplate_Sign` (`SignId`,`TemplateId`),
+  KEY `TemplateId` (`TemplateId`),
+  CONSTRAINT `SignTemplate_ibfk_1` FOREIGN KEY (`SignId`) REFERENCES `Sign` (`SignId`),
+  CONSTRAINT `SignTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
