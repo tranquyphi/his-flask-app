@@ -222,6 +222,7 @@ class Visit(db.Model):
     # Relationships
     diagnoses = db.relationship('VisitDiagnosis', backref='visit', lazy=True)
     documents = db.relationship('VisitDocuments', backref='visit', lazy=True)
+    images = db.relationship('VisitImage', backref='visit', lazy=True)
     drugs = db.relationship('VisitDrug', backref='visit', lazy=True)
     procedures = db.relationship('VisitProc', backref='visit', lazy=True)
     signs = db.relationship('VisitSign', backref='visit', lazy=True)
@@ -249,6 +250,17 @@ class VisitDocuments(db.Model):
     document_links = db.Column(JSON, nullable=False)
     doc_metadata = db.Column('metadata', JSON)  # Use column name mapping
 
+class VisitImage(db.Model):
+    __tablename__ = 'VisitImage'
+    
+    VisitId = db.Column(db.BigInteger, db.ForeignKey('Visit.VisitId'), nullable=False)
+    ImageId = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    ImageType = db.Column(db.String(50))
+    ImageData = db.Column(db.LargeBinary)
+    ImageUrl = db.Column(db.String(255))
+    Description = db.Column(db.String(255))
+    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+
 class VisitDrug(db.Model):
     __tablename__ = 'VisitDrug'
     
@@ -259,6 +271,7 @@ class VisitDrug(db.Model):
     DrugTimes = db.Column(db.String(100))
     DrugAtTime = db.Column(db.DateTime)
     Note = db.Column(db.String(100))
+    DrugStatus = db.Column(db.Enum('CD', 'TH', 'XONG', name='drug_status'), default='CD')
     IsCustom = db.Column(db.Boolean, default=False)
 
 class VisitProc(db.Model):
@@ -297,7 +310,7 @@ class VisitTest(db.Model):
     
     VisitId = db.Column(db.BigInteger, db.ForeignKey('Visit.VisitId'), primary_key=True)
     TestId = db.Column(db.String(50), db.ForeignKey('Test.TestId'), primary_key=True)
-    TestStatus = db.Column(db.Enum('Ordered', 'In progress', 'Completed', 'Result', name='test_status'), default='Ordered')
+    TestStatus = db.Column(db.Enum('CD', 'TH', 'XONG', name='test_status'), default='CD')
     TestStaffId = db.Column(db.SmallInteger, db.ForeignKey('Staff.StaffId'))
     TestTime = db.Column(db.DateTime)
     TestResult = db.Column(db.String(255))
@@ -350,298 +363,3 @@ def test_connection():
 # ===========================================
 # Database Views as ORM Models
 # ===========================================
-
-class PatientWithDepartment(db.Model):
-    """ORM Model for patients_with_department view"""
-    __tablename__ = 'patients_with_department'
-    __table_args__ = {'info': dict(is_view=True)}  # Mark as view for documentation
-    
-    PatientId = db.Column(db.String(10), primary_key=True)
-    PatientName = db.Column(db.String(100))
-    PatientGender = db.Column(db.Enum('Nam', 'Nữ', 'Khác', name='gender'))
-    PatientAge = db.Column(db.String(20))
-    PatientAddress = db.Column(db.String(255))
-    Allergy = db.Column(db.String(255))
-    History = db.Column(db.Text)
-    PatientNote = db.Column(db.String(100))
-    DepartmentId = db.Column(db.SmallInteger)
-    DepartmentName = db.Column(db.String(100))
-    DepartmentType = db.Column(db.Enum('Nội trú', 'Cấp cứu', 'Phòng khám', name='department_type'))
-    DepartmentAssignedAt = db.Column(db.DateTime)
-    
-    def to_dict(self):
-        """Convert to dictionary for JSON serialization"""
-        return {
-            'PatientId': self.PatientId,
-            'PatientName': self.PatientName,
-            'PatientGender': self.PatientGender,
-            'PatientAge': self.PatientAge,
-            'PatientAddress': self.PatientAddress,
-            'Allergy': self.Allergy,
-            'History': self.History,
-            'PatientNote': self.PatientNote,
-            'DepartmentId': self.DepartmentId,
-            'DepartmentName': self.DepartmentName,
-            'DepartmentType': self.DepartmentType,
-            'DepartmentAssignedAt': self.DepartmentAssignedAt.isoformat() if self.DepartmentAssignedAt else None
-        }
-    
-    def __repr__(self):
-        return f'<PatientWithDepartment {self.PatientId}: {self.PatientName} - {self.DepartmentName}>'
-
-class StaffWithDepartment(db.Model):
-    """ORM Model for staff_with_department view"""
-    __tablename__ = 'staff_with_department'
-    __table_args__ = {'info': dict(is_view=True)}
-    
-    StaffId = db.Column(db.SmallInteger, primary_key=True)
-    FirstName = db.Column(db.String(50))
-    LastName = db.Column(db.String(50))
-    FullName = db.Column(db.String(100))
-    Role = db.Column(db.Enum('Bác sĩ', 'Điều dưỡng', 'Kỹ thuật viên', 'Khác', name='staff_role'))
-    Phone = db.Column(db.String(20))
-    Email = db.Column(db.String(100))
-    Address = db.Column(db.String(255))
-    DateHired = db.Column(db.Date)
-    Active = db.Column(db.Boolean)
-    DepartmentId = db.Column(db.SmallInteger)
-    DepartmentName = db.Column(db.String(100))
-    DepartmentType = db.Column(db.Enum('Nội trú', 'Cấp cứu', 'Phòng khám', name='department_type'))
-    
-    def to_dict(self):
-        """Convert to dictionary for JSON serialization"""
-        return {
-            'StaffId': self.StaffId,
-            'FirstName': self.FirstName,
-            'LastName': self.LastName,
-            'FullName': self.FullName,
-            'Role': self.Role,
-            'Phone': self.Phone,
-            'Email': self.Email,
-            'Address': self.Address,
-            'DateHired': self.DateHired.isoformat() if self.DateHired else None,
-            'Active': self.Active,
-            'DepartmentId': self.DepartmentId,
-            'DepartmentName': self.DepartmentName,
-            'DepartmentType': self.DepartmentType
-        }
-    
-    def __repr__(self):
-        return f'<StaffWithDepartment {self.StaffId}: {self.FullName} - {self.DepartmentName}>'
-
-class VisitWithDetails(db.Model):
-    """ORM Model for visits_with_details view"""
-    __tablename__ = 'visits_with_details'
-    __table_args__ = {'info': dict(is_view=True)}
-    
-    VisitId = db.Column(db.BigInteger, primary_key=True)
-    PatientId = db.Column(db.String(10))
-    PatientName = db.Column(db.String(100))
-    StaffId = db.Column(db.SmallInteger)
-    StaffName = db.Column(db.String(100))
-    StaffRole = db.Column(db.Enum('Bác sĩ', 'Điều dưỡng', 'Kỹ thuật viên', 'Khác', name='staff_role'))
-    DepartmentId = db.Column(db.SmallInteger)
-    DepartmentName = db.Column(db.String(100))
-    VisitDate = db.Column(db.DateTime)
-    VisitType = db.Column(db.String(50))
-    ChiefComplaint = db.Column(db.Text)
-    Diagnosis = db.Column(db.Text)
-    Treatment = db.Column(db.Text)
-    Status = db.Column(db.String(20))
-    FollowUpDate = db.Column(db.Date)
-    Notes = db.Column(db.Text)
-    
-    def to_dict(self):
-        """Convert to dictionary for JSON serialization"""
-        return {
-            'VisitId': self.VisitId,
-            'PatientId': self.PatientId,
-            'PatientName': self.PatientName,
-            'StaffId': self.StaffId,
-            'StaffName': self.StaffName,
-            'StaffRole': self.StaffRole,
-            'DepartmentId': self.DepartmentId,
-            'DepartmentName': self.DepartmentName,
-            'VisitDate': self.VisitDate.isoformat() if self.VisitDate else None,
-            'VisitType': self.VisitType,
-            'ChiefComplaint': self.ChiefComplaint,
-            'Diagnosis': self.Diagnosis,
-            'Treatment': self.Treatment,
-            'Status': self.Status,
-            'FollowUpDate': self.FollowUpDate.isoformat() if self.FollowUpDate else None,
-            'Notes': self.Notes
-        }
-    
-    def __repr__(self):
-        return f'<VisitWithDetails {self.VisitId}: {self.PatientName} - {self.DepartmentName}>'
-
-# ===========================================
-# Database query helper functions
-# ===========================================
-
-def get_all_patients():
-    """Get all patients"""
-    return Patient.query.all()
-
-def get_all_patients_with_department():
-    """Get all patients with their current department information using ORM"""
-    try:
-        # Using ORM to query the view - much cleaner and more maintainable
-        patients = PatientWithDepartment.query.order_by(PatientWithDepartment.PatientId).all()
-        return [patient.to_dict() for patient in patients]
-    except Exception as e:
-        print(f"Error querying patients_with_department view: {e}")
-        # Fallback to regular patients table if view doesn't exist yet
-        patients = Patient.query.all()
-        patients_data = []
-        for patient in patients:
-            patients_data.append({
-                'PatientId': patient.PatientId,
-                'PatientName': patient.PatientName,
-                'PatientGender': patient.PatientGender,
-                'PatientAge': patient.PatientAge,
-                'PatientAddress': patient.PatientAddress,
-                'Allergy': patient.Allergy,
-                'History': patient.History,
-                'PatientNote': patient.PatientNote,
-                'DepartmentId': None,
-                'DepartmentName': None,
-                'DepartmentType': None,
-                'DepartmentAssignedAt': None
-            })
-        return patients_data
-
-def get_patient_by_id(patient_id):
-    """Get patient by ID"""
-    return Patient.query.get(patient_id)
-
-def create_patient_record(patient_data):
-    """Create a new patient record"""
-    patient = Patient(
-        PatientId=patient_data.get('PatientId'),
-        PatientName=patient_data.get('PatientName'),
-        PatientGender=patient_data.get('PatientGender'),
-        PatientAge=patient_data.get('PatientAge'),
-        PatientAddress=patient_data.get('PatientAddress'),
-        Allergy=patient_data.get('Allergy', ''),
-        History=patient_data.get('History'),
-        PatientNote=patient_data.get('PatientNote', '')
-    )
-    db.session.add(patient)
-    db.session.commit()
-    return patient.PatientId
-
-def update_patient_record(patient_id, patient_data):
-    """Update patient record"""
-    patient = Patient.query.get(patient_id)
-    if patient:
-        for key, value in patient_data.items():
-            if hasattr(patient, key):
-                setattr(patient, key, value)
-        db.session.commit()
-        return True
-    return False
-
-def create_visit_record(visit_data):
-    """Create a new visit record"""
-    visit = Visit(
-        PatientId=visit_data.get('PatientId'),
-        DepartmentId=visit_data.get('DepartmentId'),
-        VisitPurpose=visit_data.get('VisitPurpose'),
-        VisitTime=visit_data.get('VisitTime', datetime.utcnow()),
-        StaffId=visit_data.get('StaffId')
-    )
-    db.session.add(visit)
-    db.session.commit()
-    return visit.VisitId
-
-def get_visits_by_patient(patient_id):
-    """Get all visits for a patient"""
-    return Visit.query.filter_by(PatientId=patient_id).all()
-
-def get_staff_by_department(department_id):
-    """Get all staff in a department"""
-    return Staff.query.filter_by(DepartmentId=department_id, StaffAvailable=True).all()
-
-def get_all_staff_with_department():
-    """Get all staff with their department information using ORM"""
-    try:
-        staff = StaffWithDepartment.query.order_by(StaffWithDepartment.StaffId).all()
-        return [member.to_dict() for member in staff]
-    except Exception as e:
-        print(f"Error querying staff_with_department view: {e}")
-        # Fallback to regular staff table if view doesn't exist yet
-        staff = Staff.query.all()
-        staff_data = []
-        for member in staff:
-            dept = Department.query.get(member.DepartmentId) if member.DepartmentId else None
-            staff_data.append({
-                'StaffId': member.StaffId,
-                'FirstName': member.StaffName.split()[0] if member.StaffName else '',
-                'LastName': ' '.join(member.StaffName.split()[1:]) if member.StaffName and len(member.StaffName.split()) > 1 else '',
-                'FullName': member.StaffName,
-                'Role': member.StaffRole,
-                'Phone': None,
-                'Email': None,
-                'Address': None,
-                'DateHired': None,
-                'Active': member.StaffAvailable,
-                'DepartmentId': member.DepartmentId,
-                'DepartmentName': dept.DepartmentName if dept else None,
-                'DepartmentType': dept.DepartmentType if dept else None
-            })
-        return staff_data
-
-def get_all_visits_with_details():
-    """Get all visits with detailed information using ORM"""
-    try:
-        visits = VisitWithDetails.query.order_by(VisitWithDetails.VisitId.desc()).all()
-        return [visit.to_dict() for visit in visits]
-    except Exception as e:
-        print(f"Error querying visits_with_details view: {e}")
-        # Fallback to regular visits table if view doesn't exist yet
-        visits = Visit.query.all()
-        visits_data = []
-        for visit in visits:
-            patient = Patient.query.get(visit.PatientId)
-            staff = Staff.query.get(visit.StaffId)
-            dept = Department.query.get(visit.DepartmentId)
-            visits_data.append({
-                'VisitId': visit.VisitId,
-                'PatientId': visit.PatientId,
-                'PatientName': patient.PatientName if patient else None,
-                'StaffId': visit.StaffId,
-                'StaffName': staff.StaffName if staff else None,
-                'StaffRole': staff.StaffRole if staff else None,
-                'DepartmentId': visit.DepartmentId,
-                'DepartmentName': dept.DepartmentName if dept else None,
-                'VisitDate': visit.VisitTime.isoformat() if visit.VisitTime else None,
-                'VisitType': visit.VisitPurpose,
-                'ChiefComplaint': None,
-                'Diagnosis': None,
-                'Treatment': None,
-                'Status': None,
-                'FollowUpDate': None,
-                'Notes': None
-            })
-        return visits_data
-
-def get_patient_with_department_by_id(patient_id):
-    """Get a specific patient with department information using ORM"""
-    try:
-        return PatientWithDepartment.query.filter_by(PatientId=patient_id).first()
-    except Exception as e:
-        print(f"Error querying patient from view: {e}")
-        return None
-
-# Usage example:
-if __name__ == "__main__":
-    app = create_app()
-    
-    with app.app_context():
-        # Test database connection
-        if test_connection():
-            print("✓ Database connection established successfully!")
-            print("✓ ORM models defined and ready to use")
-        else:
-            print("✗ Failed to connect to database")

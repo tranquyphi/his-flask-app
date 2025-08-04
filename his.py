@@ -15,6 +15,7 @@ from models import (
     PatientWithDepartment, StaffWithDepartment, VisitWithDetails
 )
 from environment import create_example_routes
+# from translations import translate
 
 # Create app with database configuration
 config_name = os.getenv('FLASK_ENV', 'development')
@@ -22,6 +23,7 @@ app = create_app(config_name)
 
 # Add environment variable demonstration routes
 create_example_routes(app)
+
 
 # ==========================================
 # HTML Routes for UI
@@ -341,39 +343,6 @@ def get_patient_visits(patient_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/departments', methods=['GET'])
-def get_departments():
-    """Get all departments"""
-    try:
-        departments = Department.query.all()
-        departments_data = []
-        for dept in departments:
-            departments_data.append({
-                'DepartmentId': dept.DepartmentId,
-                'DepartmentName': dept.DepartmentName,
-                'DepartmentType': dept.DepartmentType
-            })
-        return jsonify({'departments': departments_data})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
-@app.route('/api/staff', methods=['GET'])
-def get_all_staff():
-    """Get all staff"""
-    try:
-        staff = Staff.query.filter_by(StaffAvailable=True).all()
-        staff_data = []
-        for s in staff:
-            staff_data.append({
-                'StaffId': s.StaffId,
-                'StaffName': s.StaffName,
-                'StaffRole': s.StaffRole,
-                'DepartmentId': s.DepartmentId
-            })
-        return jsonify({'staff': staff_data})
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
-
 # ==========================================
 # Additional Helper Functions
 # ==========================================
@@ -508,6 +477,11 @@ def test_db_connection():
             return jsonify({'status': 'error', 'message': 'Database connection failed'}), 500
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# @app.route('/label')
+# def label():
+#     lang = request.args.get('lang', 'vi')
+#     return translate('patient', lang)
 
 if __name__ == '__main__':
     with app.app_context():

@@ -223,6 +223,18 @@ CREATE TABLE `VisitDocuments` (
   CONSTRAINT `VisitDocuments_Visit_FK` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+CREATE TABLE `VisitImage` (
+  `VisitId` bigint(20) NOT NULL,
+  `ImageId` bigint(20) NOT NULL AUTO_INCREMENT,
+  `ImageType` varchar(50) DEFAULT NULL COMMENT 'Type of image (e.g. wound, burn, scan, etc.)',
+  `ImageData` longblob COMMENT 'Binary image data',
+  `ImageUrl` varchar(255) DEFAULT NULL COMMENT 'Optional: URL if stored externally',
+  `Description` varchar(255) DEFAULT NULL COMMENT 'Description or notes about the image',
+  `CreatedAt` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`ImageId`),
+  KEY `VisitId` (`VisitId`),
+  CONSTRAINT `VisitImage_Visit_FK` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- examdb.VisitDrug definition
 
@@ -234,7 +246,7 @@ CREATE TABLE `VisitDrug` (
   `DrugTimes` varchar(100) DEFAULT NULL,
   `DrugAtTime` datetime DEFAULT NULL,
   `Note` varchar(100) DEFAULT NULL,
-  `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)',
+  `DrugStatus` ENUM ('CD', 'TH', 'XONG') DEFAULT 'CD',
   UNIQUE KEY `Visit_VisitDrug` (`DrugId`,`VisitId`),
   KEY `VisitId` (`VisitId`),
   CONSTRAINT `VisitDrug_ibfk_1` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`),
@@ -300,7 +312,7 @@ CREATE TABLE `VisitStaff` (
 CREATE TABLE `VisitTest` (
   `VisitId` bigint(20) NOT NULL,
   `TestId` varchar(50) DEFAULT NULL,
-  `TestStatus` enum('Ordered','In progress','Completed','Result') DEFAULT 'Ordered' COMMENT 'Trạng thái của xét nghiệm',
+  `TestStatus` enum('CD','TH','XONG') DEFAULT 'CD' COMMENT 'Trạng thái của xét nghiệm',
   `TestStaffId` smallint(6) DEFAULT NULL COMMENT 'Nhân viên thực hiện xét nghiệm',
   `TestTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện',
   `TestResult` varchar(255) DEFAULT NULL COMMENT 'Kết quả',
