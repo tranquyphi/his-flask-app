@@ -348,3 +348,4 @@ CREATE TABLE `SignTemplate` (
   KEY `TemplateId` (`TemplateId`),
   CONSTRAINT `SignTemplate_ibfk_1` FOREIGN KEY (`SignId`) REFERENCES `Sign` (`SignId`),
   CONSTRAINT `SignTemplate_ibfk_2` FOREIGN KEY (`TemplateId`) REFERENCES `Template` (`TemplateId`)
+

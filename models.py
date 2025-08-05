@@ -339,6 +339,12 @@ class SignTemplate(db.Model):
     TemplateId = db.Column(db.SmallInteger, db.ForeignKey('Template.TemplateId'), primary_key=True)
     SignId = db.Column(db.SmallInteger, db.ForeignKey('Sign.SignId'), primary_key=True)
 
+class PatientsWithDepartment(db.Model):
+    __tablename__ = 'PatientsWithDepartment'
+    
+    PatientName = db.Column(db.String(50), primary_key=True)
+    DepartmentId = db.Column(db.String(100))
+
 # ===========================================
 # Database helper functions
 # ===========================================
