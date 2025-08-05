@@ -114,7 +114,11 @@ class Patient(db.Model):
     PatientAddress = db.Column(db.String(255))
     Allergy = db.Column(db.String(255), default='')
     History = db.Column(db.Text)
-    PatientImage = db.Column(db.LargeBinary)
+    # Check default value for PatientImage
+    # If you want to allow NULL, set default=None
+    # If you want to set a default image, provide the binary data or path
+    # For now, we will set it to None
+    PatientImage = db.Column(db.LargeBinary,default=None)
     PatientNote = db.Column(db.String(100), default='')
     
     # Relationships
@@ -343,7 +347,11 @@ class PatientsWithDepartment(db.Model):
     __tablename__ = 'PatientsWithDepartment'
     
     PatientName = db.Column(db.String(50), primary_key=True)
-    DepartmentId = db.Column(db.String(100))
+    PatientId = db.Column(db.String(10), db.ForeignKey('Patient.PatientId'), nullable=False)
+    DepartmentName = db.Column(db.String(100), nullable=False)
+    PatientAge = db.Column(db.String(20))
+    PatientGender = db.Column(db.Enum('Nam', 'Nữ', 'Khác', name='patient_gender'))
+    
 
 # ===========================================
 # Database helper functions
