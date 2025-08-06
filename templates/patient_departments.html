@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
     <title>Patient Department Management</title>
     
     <!-- Bootstrap CSS -->
@@ -11,6 +11,7 @@
     
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dataTables.bootstrap5.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/responsive.bootstrap5.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/buttons.bootstrap5.min.css') }}">
     
     <style>
@@ -37,6 +38,126 @@
             border-radius: 0.375rem;
             overflow: hidden;
             box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            /* Force horizontal scrolling on mobile */
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Mobile responsive improvements */
+        @media (max-width: 768px) {
+            .table-responsive {
+                /* Ensure horizontal scrolling */
+                overflow-x: scroll;
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            #patient-departments-table {
+                /* Prevent table from shrinking too much */
+                min-width: 800px;
+                font-size: 0.85rem;
+            }
+            
+            #patient-departments-table th,
+            #patient-departments-table td {
+                /* Prevent text wrapping in cells */
+                white-space: nowrap;
+                padding: 0.5rem 0.3rem;
+            }
+            
+            /* Make action buttons smaller on mobile */
+            .btn-group-sm .btn {
+                padding: 0.15rem 0.3rem;
+                font-size: 0.75rem;
+            }
+            
+            /* Adjust modal for mobile */
+            .modal-dialog {
+                margin: 0.5rem;
+                max-width: calc(100% - 1rem);
+            }
+            
+            /* Responsive filters */
+            .col-md-3 {
+                margin-bottom: 0.5rem;
+            }
+        }
+        
+        /* Small mobile devices */
+        @media (max-width: 576px) {
+            #patient-departments-table {
+                min-width: 700px;
+                font-size: 0.8rem;
+            }
+            
+            .container-fluid {
+                padding-left: 0.5rem;
+                padding-right: 0.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            /* Stack filters vertically on very small screens */
+            .row.mb-3 .col-md-3 {
+                margin-bottom: 0.75rem;
+            }
+        }
+        
+        /* Ensure scrollbar is visible */
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        /* Touch-friendly improvements */
+        .btn {
+            min-height: 44px; /* Minimum touch target size */
+        }
+        
+        .btn-sm {
+            min-height: 38px;
+            min-width: 38px;
+        }
+        
+        /* DataTables responsive improvements */
+        .dtr-details {
+            background-color: #f8f9fa;
+            border-left: 3px solid #007bff;
+            padding: 1rem;
+        }
+        
+        .dtr-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Improve touch targets for DataTables controls */
+        .dataTables_paginate .paginate_button {
+            min-height: 44px !important;
+            min-width: 44px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        
+        .dataTables_length select,
+        .dataTables_filter input {
+            min-height: 38px;
         }
     </style>
 </head>
@@ -51,26 +172,26 @@
 
         <!-- Filters and Controls -->
         <div class="row mb-3">
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
                 <label for="search-patient" class="form-label">Search Patient:</label>
                 <input type="text" id="search-patient" class="form-control" placeholder="Search by name or ID...">
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
                 <label for="filter-department" class="form-label">Filter by Department:</label>
                 <select id="filter-department" class="form-select">
                     <option value="">All Departments</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
                 <label for="filter-current" class="form-label">Filter by Status:</label>
                 <select id="filter-current" class="form-select">
                     <option value="">All Status</option>
-                    <option value="1"><i class="fas fa-check-circle text-success"></i> Đang nằm viện</option>
-                    <option value="0"><i class="fas fa-history text-secondary"></i> Đã ra viện</option>
+                    <option value="1">Đang nằm viện</option>
+                    <option value="0">Đã ra viện</option>
                 </select>
             </div>
-            <div class="col-md-3 d-flex align-items-end">
-                <button id="add-assignment" class="btn btn-primary">
+            <div class="col-lg-3 col-md-6 col-sm-12 mb-2 d-flex align-items-end">
+                <button id="add-assignment" class="btn btn-primary w-100 w-lg-auto">
                     <i class="fas fa-plus"></i> New Assignment
                 </button>
             </div>
@@ -79,23 +200,27 @@
         <!-- Data Table -->
         <div class="row">
             <div class="col-12">
-                <div class="table-responsive">
-                    <table id="patient-departments-table" class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>Mã</th>
-                                <th>Họ tên</th>
-                                <th>Tuổi</th>
-                                <th>Giới</th>
-                                <th>Khoa</th>
-                                <th>Đang nằm</th>
-                                <th>Ngày vào</th>
-                                <th>Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        </tbody>
-                    </table>
+                <div class="card">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table id="patient-departments-table" class="table table-striped table-hover mb-0">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Mã</th>
+                                        <th>Họ tên</th>
+                                        <th>Tuổi</th>
+                                        <th>Giới</th>
+                                        <th>Khoa</th>
+                                        <th>Đang nằm</th>
+                                        <th>Ngày vào</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -147,6 +272,8 @@
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dataTables.bootstrap5.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/dataTables.responsive.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/responsive.bootstrap5.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dataTables.buttons.min.js') }}"></script>
     
     <!-- Custom JavaScript -->

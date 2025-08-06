@@ -87,5 +87,10 @@ def patient_departments_page():
 def test_datatables_page():
     return render_template('test_datatables.html')
 
+@app.route('/mobile_test')
+def mobile_test_page():
+    with open('mobile-test.html', 'r') as f:
+        return f.read()
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

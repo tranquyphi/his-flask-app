@@ -115,8 +115,25 @@ $(document).ready(function() {
                 ],
                 pageLength: 25,
                 responsive: true,
+                scrollX: true, // Enable horizontal scrolling
+                scrollCollapse: true,
                 order: [[6, 'desc']], // Order by assigned date
                 searching: true, // Ensure search is enabled
+                autoWidth: false, // Prevent auto width calculation
+                columnDefs: [
+                    {
+                        targets: [7], // Actions column
+                        responsivePriority: 1 // Always show actions column
+                    },
+                    {
+                        targets: [0, 1], // Patient ID and Name
+                        responsivePriority: 2 // Show these next
+                    },
+                    {
+                        targets: [4, 5], // Department and Current status
+                        responsivePriority: 3 // Show these after
+                    }
+                ],
                 language: {
                     emptyTable: "Không tìm thấy thông tin người bệnh ở các khoa",
                     search: "Tìm kiếm:",
