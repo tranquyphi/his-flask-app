@@ -343,14 +343,14 @@ class SignTemplate(db.Model):
     TemplateId = db.Column(db.SmallInteger, db.ForeignKey('Template.TemplateId'), primary_key=True)
     SignId = db.Column(db.SmallInteger, db.ForeignKey('Sign.SignId'), primary_key=True)
 
-class PatientsWithDepartment(db.Model):
-    __tablename__ = 'PatientsWithDepartment'
+# class PatientsWithDepartment(db.Model):
+#     __tablename__ = 'PatientsWithDepartment'
     
-    PatientName = db.Column(db.String(50), primary_key=True)
-    PatientId = db.Column(db.String(10), db.ForeignKey('Patient.PatientId'), nullable=False)
-    DepartmentName = db.Column(db.String(100), nullable=False)
-    PatientAge = db.Column(db.String(20))
-    PatientGender = db.Column(db.Enum('Nam', 'Nữ', 'Khác', name='patient_gender'))
+#     PatientName = db.Column(db.String(50), primary_key=True)
+#     PatientId = db.Column(db.String(10), db.ForeignKey('Patient.PatientId'), nullable=False)
+#     DepartmentName = db.Column(db.String(100), nullable=False)
+#     PatientAge = db.Column(db.String(20))
+#     PatientGender = db.Column(db.Enum('Nam', 'Nữ', 'Khác', name='patient_gender'))
     
 
 # ===========================================
