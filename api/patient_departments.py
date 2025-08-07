@@ -277,3 +277,43 @@ def delete_patient_department_by_id(record_id):
         print(f"Error deleting patient department by ID: {e}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@patient_dept_bp.route('/patient_department_detail/record/<int:record_id>', methods=['PUT'])
+def update_patient_department_by_id(record_id):
+    """Update a specific patient department assignment by record ID"""
+    try:
+        data = request.json
+        print(f"Updating patient department by ID {record_id}: {data}")
+        
+        # Find the specific record
+        pd = PatientDepartment.query.get(record_id)
+        if not pd:
+            return jsonify({"error": "Assignment not found"}), 404
+        
+        # Business logic: If setting this assignment to Current, make others Historical
+        if data.get('Current', False) and not pd.Current:
+            other_assignments = PatientDepartment.query.filter(
+                PatientDepartment.PatientId == pd.PatientId,
+                PatientDepartment.Current == True,
+                PatientDepartment.id != record_id
+            ).all()
+            
+            for assignment in other_assignments:
+                assignment.Current = False
+                print(f"Setting assignment {assignment.PatientId}-{assignment.DepartmentId} to Historical")
+        
+        # Update the specific record
+        pd.DepartmentId = data.get('DepartmentId', pd.DepartmentId)
+        pd.Current = data.get('Current', pd.Current)
+        if 'At' in data and data['At']:
+            pd.At = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
+        else:
+            pd.At = datetime.utcnow()
+            
+        db.session.commit()
+        return jsonify({"message": "Updated successfully"})
+        
+    except Exception as e:
+        print(f"Error updating patient department by ID: {e}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
