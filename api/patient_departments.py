@@ -33,6 +33,7 @@ def get_patient_departments():
             # Filter by PatientId if provided
             results = (
                 db.session.query(
+                    PatientDepartment.id,
                     PatientDepartment.PatientId,
                     PatientDepartment.DepartmentId,
                     PatientDepartment.Current,
@@ -53,6 +54,7 @@ def get_patient_departments():
             # Return all if no PatientId specified
             results = (
                 db.session.query(
+                    PatientDepartment.id,
                     PatientDepartment.PatientId,
                     PatientDepartment.DepartmentId,
                     PatientDepartment.Current,
@@ -86,6 +88,7 @@ def get_patient_departments():
         try:
             items = PatientDepartment.query.all()
             return jsonify([{
+                'id': item.id,
                 'PatientId': item.PatientId,
                 'DepartmentId': item.DepartmentId,
                 'Current': item.Current,
@@ -113,34 +116,20 @@ def add_patient_department():
                 assignment.Current = False
                 print(f"Setting assignment {assignment.PatientId}-{assignment.DepartmentId} to Historical")
         
-        # Check if this exact assignment already exists
-        existing = PatientDepartment.query.filter_by(
-            PatientId=data['PatientId'],
-            DepartmentId=data['DepartmentId']
-        ).first()
+        # Always create a new assignment since patients can be assigned multiple times
+        # to the same department at different time intervals
+        at_time = datetime.utcnow()
+        if 'At' in data:
+            at_time = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
         
-        if existing:
-            # Update existing assignment
-            existing.Current = data.get('Current', True)
-            if 'At' in data:
-                existing.At = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
-            else:
-                existing.At = datetime.utcnow()
-            print(f"Updated existing assignment {existing.PatientId}-{existing.DepartmentId}")
-        else:
-            # Create new assignment
-            at_time = datetime.utcnow()
-            if 'At' in data:
-                at_time = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
-            
-            new_link = PatientDepartment(
-                PatientId=data['PatientId'],
-                DepartmentId=data['DepartmentId'],
-                Current=data.get('Current', True),
-                At=at_time
-            )
-            db.session.add(new_link)
-            print(f"Created new assignment {new_link.PatientId}-{new_link.DepartmentId}")
+        new_link = PatientDepartment(
+            PatientId=data['PatientId'],
+            DepartmentId=data['DepartmentId'],
+            Current=data.get('Current', True),
+            At=at_time
+        )
+        db.session.add(new_link)
+        print(f"Created new assignment {new_link.PatientId}-{new_link.DepartmentId} at {at_time}")
         
         db.session.commit()
         return jsonify({"message": "Assignment processed successfully"}), 201
@@ -156,76 +145,59 @@ def update_patient_department():
         data = request.json
         print(f"Updating patient department: {data}")
         
-        # For department changes, we need the original department ID
-        # The frontend should send both the current and new department IDs
-        original_dept_id = data.get('OriginalDepartmentId')
+        # Since we removed unique constraints, we need to identify the specific record to update
+        # We'll use a combination of PatientId, DepartmentId, and timestamp or record ID
         patient_id = data['PatientId']
-        new_dept_id = data['DepartmentId']
+        dept_id = data['DepartmentId']
         
-        # If no original department ID is provided, assume we're updating the current assignment
-        if original_dept_id:
-            # Find the original record to update/delete
-            original_pd = PatientDepartment.query.filter_by(
-                PatientId=patient_id, 
-                DepartmentId=original_dept_id
-            ).first()
+        # Try to find the most recent current assignment to update
+        # Or use a specific record ID if provided
+        record_id = data.get('RecordId')  # Frontend should pass this for specific updates
+        
+        if record_id:
+            # Update specific record by ID (if your table has an auto-increment ID)
+            original_pd = PatientDepartment.query.filter_by(id=record_id).first()
         else:
-            # Find any current assignment for this patient
+            # Find the most recent current assignment for this patient-department combination
             original_pd = PatientDepartment.query.filter_by(
                 PatientId=patient_id,
+                DepartmentId=dept_id,
                 Current=True
-            ).first()
+            ).order_by(PatientDepartment.At.desc()).first()
         
         if not original_pd:
-            return jsonify({"error": "Original assignment not found"}), 404
+            return jsonify({"error": "Assignment record not found"}), 404
         
-        # If the department is changing, create a new record and delete the old one
+        # For department changes, create new record and update old one
+        new_dept_id = data.get('NewDepartmentId', dept_id)
+        
         if str(original_pd.DepartmentId) != str(new_dept_id):
             print(f"Department changing from {original_pd.DepartmentId} to {new_dept_id}")
             
-            # Business logic: When assigning to a new department, make all other current assignments historical
+            # Business logic: When assigning to a new department, make all current assignments historical
             if data.get('Current', True):
-                other_current = PatientDepartment.query.filter(
-                    PatientDepartment.PatientId == patient_id,
-                    PatientDepartment.Current == True
+                current_assignments = PatientDepartment.query.filter_by(
+                    PatientId=patient_id,
+                    Current=True
                 ).all()
                 
-                for assignment in other_current:
+                for assignment in current_assignments:
                     assignment.Current = False
                     print(f"Setting assignment {assignment.PatientId}-{assignment.DepartmentId} to Historical")
             
-            # Check if the new combination already exists
-            existing_new = PatientDepartment.query.filter_by(
+            # Create new assignment for the new department
+            at_time = datetime.utcnow()
+            if 'At' in data:
+                at_time = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
+            
+            new_assignment = PatientDepartment(
                 PatientId=patient_id,
-                DepartmentId=new_dept_id
-            ).first()
-            
-            if existing_new:
-                # Update the existing record
-                existing_new.Current = data.get('Current', True)
-                if 'At' in data:
-                    existing_new.At = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
-                else:
-                    existing_new.At = datetime.utcnow()
-                print(f"Updated existing assignment to new department {existing_new.PatientId}-{existing_new.DepartmentId}")
-            else:
-                # Create new assignment
-                at_time = datetime.utcnow()
-                if 'At' in data:
-                    at_time = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
-                
-                new_assignment = PatientDepartment(
-                    PatientId=patient_id,
-                    DepartmentId=new_dept_id,
-                    Current=data.get('Current', True),
-                    At=at_time
-                )
-                db.session.add(new_assignment)
-                print(f"Created new assignment {new_assignment.PatientId}-{new_assignment.DepartmentId}")
-            
-            # Delete the original assignment
-            db.session.delete(original_pd)
-            print(f"Deleted original assignment {original_pd.PatientId}-{original_pd.DepartmentId}")
+                DepartmentId=new_dept_id,
+                Current=data.get('Current', True),
+                At=at_time
+            )
+            db.session.add(new_assignment)
+            print(f"Created new assignment {new_assignment.PatientId}-{new_assignment.DepartmentId}")
             
         else:
             # Same department, just update the existing record
@@ -235,13 +207,13 @@ def update_patient_department():
             if data.get('Current', False) and not original_pd.Current:
                 other_assignments = PatientDepartment.query.filter(
                     PatientDepartment.PatientId == patient_id,
-                    PatientDepartment.DepartmentId != original_pd.DepartmentId,
                     PatientDepartment.Current == True
                 ).all()
                 
                 for assignment in other_assignments:
-                    assignment.Current = False
-                    print(f"Setting assignment {assignment.PatientId}-{assignment.DepartmentId} to Historical")
+                    if assignment != original_pd:  # Don't update the one we're currently editing
+                        assignment.Current = False
+                        print(f"Setting assignment {assignment.PatientId}-{assignment.DepartmentId} to Historical")
             
             # Update the existing assignment
             original_pd.Current = data.get('Current', original_pd.Current)
@@ -260,9 +232,48 @@ def update_patient_department():
 
 @patient_dept_bp.route('/patient_department_detail/<string:patient_id>/<int:department_id>', methods=['DELETE'])
 def delete_patient_department(patient_id, department_id):
-    pd = PatientDepartment.query.get((patient_id, department_id))
-    if not pd:
-        return jsonify({"error": "Not found"}), 404
-    db.session.delete(pd)
-    db.session.commit()
-    return jsonify({"message": "Deleted successfully"})
+    """Delete a specific patient department assignment"""
+    try:
+        # Since we removed unique constraint, we need to be more specific
+        # Delete the most recent current assignment for this patient-department combination
+        pd = PatientDepartment.query.filter_by(
+            PatientId=patient_id,
+            DepartmentId=department_id,
+            Current=True
+        ).order_by(PatientDepartment.At.desc()).first()
+        
+        if not pd:
+            # If no current assignment, try to find the most recent one
+            pd = PatientDepartment.query.filter_by(
+                PatientId=patient_id,
+                DepartmentId=department_id
+            ).order_by(PatientDepartment.At.desc()).first()
+        
+        if not pd:
+            return jsonify({"error": "Assignment not found"}), 404
+            
+        db.session.delete(pd)
+        db.session.commit()
+        return jsonify({"message": "Deleted successfully"})
+        
+    except Exception as e:
+        print(f"Error deleting patient department: {e}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@patient_dept_bp.route('/patient_department_detail/record/<int:record_id>', methods=['DELETE'])
+def delete_patient_department_by_id(record_id):
+    """Delete a specific patient department assignment by record ID"""
+    try:
+        pd = PatientDepartment.query.get(record_id)
+        if not pd:
+            return jsonify({"error": "Assignment not found"}), 404
+            
+        db.session.delete(pd)
+        db.session.commit()
+        return jsonify({"message": "Deleted successfully"})
+        
+    except Exception as e:
+        print(f"Error deleting patient department by ID: {e}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

@@ -146,13 +146,15 @@ class Proc(db.Model):
 class PatientDepartment(db.Model):
     __tablename__ = 'PatientDepartment'
     
-    PatientId = db.Column(db.String(10), db.ForeignKey('Patient.PatientId'), primary_key=True)
-    DepartmentId = db.Column(db.SmallInteger, db.ForeignKey('Department.DepartmentId'), primary_key=True)
+    # Add auto-increment ID as primary key to allow multiple assignments
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    PatientId = db.Column(db.String(10), db.ForeignKey('Patient.PatientId'), nullable=False)
+    DepartmentId = db.Column(db.SmallInteger, db.ForeignKey('Department.DepartmentId'), nullable=False)
     Current = db.Column(db.Boolean, default=False)
     At = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __repr__(self):
-        return f'<PatientDepartment {self.PatientId}-{self.DepartmentId}>'
+        return f'<PatientDepartment {self.id}: {self.PatientId}-{self.DepartmentId} at {self.At}>'
 
 class Sign(db.Model):
     __tablename__ = 'Sign'

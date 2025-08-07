@@ -89,22 +89,26 @@ $(document).ready(function() {
                         title: 'Actions',
                         orderable: false,
                         render: function(data, type, row) {
+                            const recordId = row.id || `${row.PatientId}-${row.DepartmentId}`;
                             return `
                                 <div class="btn-group btn-group-sm">
                                     <button class="btn btn-outline-primary btn-sm view-btn" 
                                             data-patient-id="${row.PatientId}" 
+                                            data-record-id="${recordId}"
                                             title="Xem chi tiết">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     <button class="btn btn-outline-success btn-sm edit-btn" 
                                             data-patient-id="${row.PatientId}" 
-                                            data-dept-id="${row.DepartmentId}" 
+                                            data-dept-id="${row.DepartmentId}"
+                                            data-record-id="${recordId}" 
                                             title="Chỉnh sửa">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button class="btn btn-outline-danger btn-sm delete-btn" 
                                             data-patient-id="${row.PatientId}" 
-                                            data-dept-id="${row.DepartmentId}" 
+                                            data-dept-id="${row.DepartmentId}"
+                                            data-record-id="${recordId}" 
                                             title="Xóa">
                                         <i class="fas fa-trash"></i>
                                     </button>
@@ -150,24 +154,13 @@ $(document).ready(function() {
                 viewAssignment(data);
             });
             
-            $('#patient-departments-table tbody').on('click', '.edit-btn', function() {
-                const data = table.row($(this).parents('tr')).data();
-                showAssignmentModal(data);
-            });
-            
             $('#patient-departments-table tbody').on('click', '.delete-btn', function() {
                 const data = table.row($(this).parents('tr')).data();
                 deleteAssignment(data);
             });
             
-            // Load dropdown options for filters
-            loadDepartments();
-            loadPatients();
-            
-            // Add filter event handlers
-            setupFilters(table);
-            
-        })
+        // Add filter event handlers
+        setupFilters(table);        })
         .fail(function(xhr, status, error) {
             console.error('API test failed:', status, error);
             console.error('Response:', xhr.responseText);
@@ -239,16 +232,6 @@ $(document).ready(function() {
             table.draw();
         });
         
-        // Add assignment button
-        $('#add-assignment').on('click', function() {
-            showAssignmentModal();
-        });
-        
-        // Save assignment button
-        $('#save-assignment').on('click', function() {
-            saveAssignment();
-        });
-        
         // Clear filters button
         $('#clear-filters').on('click', function() {
             currentSearchTerm = '';
@@ -269,33 +252,14 @@ $(document).ready(function() {
         $.get('/api/department', function(response) {
             const departments = response.department || [];
             const filter = $('#filter-department');
-            const select = $('#department-select');
             
             filter.empty().append('<option value="">All Departments</option>');
-            select.empty().append('<option value="">Select Department</option>');
             
             departments.forEach(function(dept) {
                 filter.append(`<option value="${dept.DepartmentName}">${dept.DepartmentName}</option>`);
-                select.append(`<option value="${dept.DepartmentId}">${dept.DepartmentName}</option>`);
             });
         }).fail(function() {
             console.error('Failed to load departments');
-        });
-    }
-    
-    function loadPatients() {
-        $.get('/api/patient', function(response) {
-            const patients = response.patient || [];
-            const select = $('#patient-select');
-            select.empty().append('<option value="">Select Patient</option>');
-            
-            patients.forEach(function(patient) {
-                select.append(`<option value="${patient.PatientId}">
-                    ${patient.PatientName} (${patient.PatientId})
-                </option>`);
-            });
-        }).fail(function() {
-            console.error('Failed to load patients');
         });
     }
     
@@ -318,133 +282,28 @@ $(document).ready(function() {
     }
     
     function deleteAssignment(data) {
-        if (confirm(`Xóa thông tin ${data.PatientName} khỏi khoa ${data.DepartmentName}?`)) {
+        const recordId = data.id;
+        const deleteUrl = recordId ? 
+            `/api/patient_department_detail/record/${recordId}` : 
+            `/api/patient_department_detail/${data.PatientId}/${data.DepartmentId}`;
+            
+        if (confirm(`Xóa lịch sử vào khoa: ${data.PatientName} - ${data.DepartmentName}?\n\nLưu ý: Hành động này không thể hoàn tác.`)) {
             $.ajax({
-                url: `/api/patient_department_detail/${data.PatientId}/${data.DepartmentId}`,
+                url: deleteUrl,
                 type: 'DELETE',
                 success: function() {
-                    location.reload(); // Simple reload for now
-                    showAlert('Xóa thành công!', 'success');
+                    showAlert('Xóa lịch sử vào khoa thành công!', 'success');
+                    setTimeout(() => location.reload(), 1000); // Reload to refresh data
                 },
                 error: function(xhr) {
-                    const error = xhr.responseJSON?.error || 'Không thể xóa';
+                    const error = xhr.responseJSON?.error || 'Không thể xóa lịch sử vào khoa';
                     showAlert(error, 'danger');
                 }
             });
         }
     }
     
-    function showAssignmentModal(data = null) {
-        const modal = new bootstrap.Modal(document.getElementById('assignmentModal'));
-        const form = document.getElementById('assignment-form');
-        
-        if (data) {
-            // Edit mode
-            $('#patient-select').val(data.PatientId);
-            $('#department-select').val(data.DepartmentId);
-            $('#current-assignment').prop('checked', data.Current);
-            
-            // Store the original department ID for updates
-            form.setAttribute('data-original-dept-id', data.DepartmentId);
-            
-            // Set the assigned date - convert to local datetime format
-            if (data.At) {
-                const date = new Date(data.At);
-                // Format for datetime-local input (YYYY-MM-DDTHH:mm)
-                const localDateTime = new Date(date.getTime() - (date.getTimezoneOffset() * 60000))
-                    .toISOString().slice(0, 16);
-                $('#assigned-date').val(localDateTime);
-            }
-            
-            $('.modal-title').text('Sửa khoa cho người bệnh');
-        } else {
-            // Add mode
-            form.reset();
-            form.removeAttribute('data-original-dept-id');
-            $('#current-assignment').prop('checked', true); // Default to current
-            
-            // Set current date and time as default
-            const now = new Date();
-            const localDateTime = new Date(now.getTime() - (now.getTimezoneOffset() * 60000))
-                .toISOString().slice(0, 16);
-            $('#assigned-date').val(localDateTime);
-            
-            $('.modal-title').text('Cho vào khoa mới');
-        }
-        
-        modal.show();
-    }
-    
-    function saveAssignment() {
-        const form = document.getElementById('assignment-form');
-        const formData = new FormData(form);
-        const data = Object.fromEntries(formData.entries());
-        
-        // Convert checkbox value
-        data.Current = $('#current-assignment').is(':checked');
-        
-        // Handle the assigned date
-        const assignedDate = $('#assigned-date').val();
-        if (assignedDate) {
-            // Convert local datetime to ISO string for the server
-            data.At = new Date(assignedDate).toISOString();
-        }
-        
-        // Check if this is an edit and include original department ID
-        const isEdit = $('.modal-title').text().includes('Sửa');
-        if (isEdit) {
-            const originalDeptId = form.getAttribute('data-original-dept-id');
-            if (originalDeptId) {
-                data.OriginalDepartmentId = originalDeptId;
-            }
-        }
-        
-        // Validate required fields
-        if (!data.PatientId || !data.DepartmentId) {
-            showAlert('Vui lòng chọn người bệnh và khoa', 'warning');
-            return;
-        }
-        
-        if (!assignedDate) {
-            showAlert('Vui lòng chọn ngày và giờ vào khoa', 'warning');
-            return;
-        }
-        
-        // Validate that the date is not in the future
-        const selectedDate = new Date(assignedDate);
-        const now = new Date();
-        if (selectedDate > now) {
-            showAlert('Đã chọn thời gian ở tương lai', 'warning');
-            return;
-        }
-        
-        const method = isEdit ? 'PUT' : 'POST';
-        
-        console.log('Saving assignment:', data, 'Method:', method);
-        
-        $.ajax({
-            url: '/api/patient_department_detail',
-            type: method,
-            contentType: 'application/json',
-            data: JSON.stringify(data),
-            success: function(response) {
-                bootstrap.Modal.getInstance(document.getElementById('assignmentModal')).hide();
-                showAlert(isEdit ? 'Cập nhật thành công!' : 'Lưu thành công!', 'success');
-                // Reload the page to refresh data
-                setTimeout(() => location.reload(), 1000);
-            },
-            error: function(xhr) {
-                let error = 'Failed to save assignment';
-                if (xhr.responseJSON && xhr.responseJSON.error) {
-                    error = xhr.responseJSON.error;
-                } else if (xhr.status === 409) {
-                    error = 'Người bệnh này đã được đưa vào khoa này';
-                }
-                showAlert(error, 'danger');
-                console.error('Save assignment error:', xhr.responseJSON);
-            }
-        });
-    }
+
     
     function showAlert(message, type = 'info', title = null) {
         const alertDiv = $(`

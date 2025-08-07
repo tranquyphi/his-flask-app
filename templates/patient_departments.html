@@ -164,36 +164,36 @@
 <body>
     <div class="container-fluid mt-4">
         <div class="row">
-            <div class="col-12">
+            <div class="col-lg-8 col-md-7">
                 <h1><i class="fas fa-users-medical"></i> Danh sách người bệnh ở các khoa</h1>
                 <p class="text-muted">Quản lý vào khoa</p>
+            </div>
+            <div class="col-lg-4 col-md-5 text-end">
+                <a href="/department_patients" class="btn btn-outline-primary">
+                    <i class="fas fa-hospital"></i> Xem theo khoa
+                </a>
             </div>
         </div>
 
         <!-- Filters and Controls -->
         <div class="row mb-3">
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
+            <div class="col-lg-4 col-md-6 col-sm-6 mb-2">
                 <label for="search-patient" class="form-label">Search Patient:</label>
                 <input type="text" id="search-patient" class="form-control" placeholder="Search by name or ID...">
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
+            <div class="col-lg-4 col-md-6 col-sm-6 mb-2">
                 <label for="filter-department" class="form-label">Filter by Department:</label>
                 <select id="filter-department" class="form-select">
                     <option value="">All Departments</option>
                 </select>
             </div>
-            <div class="col-lg-3 col-md-6 col-sm-6 mb-2">
+            <div class="col-lg-4 col-md-6 col-sm-6 mb-2">
                 <label for="filter-current" class="form-label">Filter by Status:</label>
                 <select id="filter-current" class="form-select">
                     <option value="">All Status</option>
                     <option value="1">Đang nằm viện</option>
                     <option value="0">Đã ra viện</option>
                 </select>
-            </div>
-            <div class="col-lg-3 col-md-6 col-sm-12 mb-2 d-flex align-items-end">
-                <button id="add-assignment" class="btn btn-primary w-100 w-lg-auto">
-                    <i class="fas fa-plus"></i> New Assignment
-                </button>
             </div>
         </div>
 
@@ -221,47 +221,6 @@
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Assignment Modal -->
-    <div class="modal fade" id="assignmentModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">New Department Assignment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="assignment-form">
-                        <div class="mb-3">
-                            <label for="patient-select" class="form-label">Người bệnh:</label>
-                            <select id="patient-select" name="PatientId" class="form-select" required>
-                                <option value="">Chọn người bệnh</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="department-select" class="form-label">Khoa:</label>
-                            <select id="department-select" name="DepartmentId" class="form-select" required>
-                                <option value="">Select Department</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="assigned-date" class="form-label">Ngày vào:</label>
-                            <input type="datetime-local" id="assigned-date" name="At" class="form-control" required>
-                            <div class="form-text">Select the date and time when this assignment was made</div>
-                        </div>
-                        <div class="mb-3 form-check">
-                            <input type="checkbox" id="current-assignment" name="Current" class="form-check-input" checked>
-                            <label for="current-assignment" class="form-check-label">Khoa hiện tại</label>
-                        </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
-                    <button type="button" id="save-assignment" class="btn btn-primary">Lưu</button>
                 </div>
             </div>
         </div>
