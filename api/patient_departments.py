@@ -38,6 +38,7 @@ def get_patient_departments():
                     PatientDepartment.DepartmentId,
                     PatientDepartment.Current,
                     PatientDepartment.At,
+                    PatientDepartment.Reason,
                     Patient.PatientAge,
                     Patient.PatientAddress,
                     Patient.PatientGender,
@@ -59,6 +60,7 @@ def get_patient_departments():
                     PatientDepartment.DepartmentId,
                     PatientDepartment.Current,
                     PatientDepartment.At,
+                    PatientDepartment.Reason,
                     Patient.PatientAge,
                     Patient.PatientAddress,
                     Patient.PatientGender,
@@ -92,7 +94,8 @@ def get_patient_departments():
                 'PatientId': item.PatientId,
                 'DepartmentId': item.DepartmentId,
                 'Current': item.Current,
-                'At': item.At.isoformat() if item.At else None
+                'At': item.At.isoformat() if item.At else None,
+                'Reason': item.Reason
             } for item in items])
         except Exception as fallback_error:
             return jsonify({'error': f'Database error: {str(fallback_error)}'}), 500
@@ -126,7 +129,8 @@ def add_patient_department():
             PatientId=data['PatientId'],
             DepartmentId=data['DepartmentId'],
             Current=data.get('Current', True),
-            At=at_time
+            At=at_time,
+            Reason=data.get('Reason', 'DT')
         )
         db.session.add(new_link)
         print(f"Created new assignment {new_link.PatientId}-{new_link.DepartmentId} at {at_time}")
@@ -194,7 +198,8 @@ def update_patient_department():
                 PatientId=patient_id,
                 DepartmentId=new_dept_id,
                 Current=data.get('Current', True),
-                At=at_time
+                At=at_time,
+                Reason=data.get('Reason', 'DT')
             )
             db.session.add(new_assignment)
             print(f"Created new assignment {new_assignment.PatientId}-{new_assignment.DepartmentId}")
@@ -217,6 +222,7 @@ def update_patient_department():
             
             # Update the existing assignment
             original_pd.Current = data.get('Current', original_pd.Current)
+            original_pd.Reason = data.get('Reason', original_pd.Reason or 'DT')
             if 'At' in data:
                 original_pd.At = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
             else:
@@ -275,5 +281,46 @@ def delete_patient_department_by_id(record_id):
         
     except Exception as e:
         print(f"Error deleting patient department by ID: {e}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@patient_dept_bp.route('/patient_department_detail/record/<int:record_id>', methods=['PUT'])
+def update_patient_department_by_id(record_id):
+    """Update a specific patient department assignment by record ID"""
+    try:
+        data = request.json
+        print(f"Updating patient department by ID {record_id}: {data}")
+        
+        # Find the specific record
+        pd = PatientDepartment.query.get(record_id)
+        if not pd:
+            return jsonify({"error": "Assignment not found"}), 404
+        
+        # Business logic: If setting this assignment to Current, make others Historical
+        if data.get('Current', False) and not pd.Current:
+            other_assignments = PatientDepartment.query.filter(
+                PatientDepartment.PatientId == pd.PatientId,
+                PatientDepartment.Current == True,
+                PatientDepartment.id != record_id
+            ).all()
+            
+            for assignment in other_assignments:
+                assignment.Current = False
+                print(f"Setting assignment {assignment.PatientId}-{assignment.DepartmentId} to Historical")
+        
+        # Update the specific record
+        pd.DepartmentId = data.get('DepartmentId', pd.DepartmentId)
+        pd.Current = data.get('Current', pd.Current)
+        pd.Reason = data.get('Reason', pd.Reason or 'DT')
+        if 'At' in data and data['At']:
+            pd.At = datetime.fromisoformat(data['At'].replace('Z', '+00:00'))
+        else:
+            pd.At = datetime.utcnow()
+            
+        db.session.commit()
+        return jsonify({"message": "Updated successfully"})
+        
+    except Exception as e:
+        print(f"Error updating patient department by ID: {e}")
         db.session.rollback()
         return jsonify({'error': str(e)}), 500

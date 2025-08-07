@@ -1,11 +1,22 @@
-// Patient Departments Management - Working Version
+// Patient Departments Management - Working Version with Edit Functionality
 $(document).ready(function() {
     console.log('Patient Departments script loaded');
     console.log('jQuery available:', typeof $);
     console.log('DataTables available:', typeof $.fn.DataTable);
     
+    // Check for URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const patientFilter = urlParams.get('patient');
+    
+    // Build API URL with filter if present
+    let apiUrl = '/api/patient_department_detail';
+    if (patientFilter) {
+        apiUrl += `?PatientId=${patientFilter}`;
+        console.log('Filtering by patient:', patientFilter);
+    }
+    
     // Test API endpoint first
-    $.get('/api/patient_department_detail')
+    $.get(apiUrl)
         .done(function(data) {
             console.log('API test successful, data received:', data);
             console.log('Data length:', data.length);
@@ -35,7 +46,6 @@ $(document).ready(function() {
                         title: 'Giới',
                         render: function(data, type, row) {
                             if (type === 'sort' || type === 'type') {
-                                // Return the actual value for sorting and searching
                                 return data || '';
                             }
                             
@@ -63,7 +73,6 @@ $(document).ready(function() {
                         title: 'Đang nằm',
                         render: function(data, type, row) {
                             if (type === 'sort' || type === 'type') {
-                                // Return the actual value for sorting and searching
                                 return data === true || data === 1 ? 'Đang nằm' : 'Đã nằm';
                             }
                             
@@ -84,6 +93,25 @@ $(document).ready(function() {
                                    date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) + '</small>';
                         }
                     },
+            {
+                data: 'Reason',
+                title: 'Lý do',
+                render: function(data, type, row) {
+                    if (type === 'display' || type === 'type') {
+                        // Map database codes to display names
+                        const reasonMap = {
+                            'DT': 'Điều trị',
+                            'PT': 'Phẫu thuật', 
+                            'KCK': 'Khám CK',
+                            'CLS': 'CLS',
+                            'KH': 'Khác'
+                        };
+                        const displayName = reasonMap[data] || data || '';
+                        return `<span class="badge bg-info">${displayName}</span>`;
+                    }
+                    return data;
+                }
+            },
                     {
                         data: null,
                         title: 'Actions',
@@ -98,12 +126,12 @@ $(document).ready(function() {
                                             title="Xem chi tiết">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-outline-success btn-sm edit-btn" 
+                                    <button class="btn btn-outline-success btn-sm add-btn" 
                                             data-patient-id="${row.PatientId}" 
                                             data-dept-id="${row.DepartmentId}"
-                                            data-record-id="${recordId}" 
-                                            title="Chỉnh sửa">
-                                        <i class="fas fa-edit"></i>
+                                            data-record-id="${recordId}"
+                                            title="Thêm vào khoa mới">
+                                        <i class="fas fa-plus"></i>
                                     </button>
                                     <button class="btn btn-outline-danger btn-sm delete-btn" 
                                             data-patient-id="${row.PatientId}" 
@@ -121,12 +149,12 @@ $(document).ready(function() {
                 responsive: true,
                 scrollX: true, // Enable horizontal scrolling
                 scrollCollapse: true,
-                order: [[6, 'desc']], // Order by assigned date
+                order: [[7, 'desc']], // Order by assigned date (now column 7)
                 searching: true, // Ensure search is enabled
                 autoWidth: false, // Prevent auto width calculation
                 columnDefs: [
                     {
-                        targets: [7], // Actions column
+                        targets: [8], // Actions column (now column 8)
                         responsivePriority: 1 // Always show actions column
                     },
                     {
@@ -154,13 +182,28 @@ $(document).ready(function() {
                 viewAssignment(data);
             });
             
+            $('#patient-departments-table tbody').on('click', '.add-btn', function() {
+                const data = table.row($(this).parents('tr')).data();
+                console.log('Add button clicked, data:', data);
+                addNewAssignment(data);
+            });
+            
             $('#patient-departments-table tbody').on('click', '.delete-btn', function() {
                 const data = table.row($(this).parents('tr')).data();
                 deleteAssignment(data);
             });
             
-        // Add filter event handlers
-        setupFilters(table);        })
+            // Add filter event handlers
+            setupFilters(table);
+            
+            // Load departments for filter
+            loadDepartments();
+            
+            // Setup modal save handler
+            $('#save-assignment').on('click', function() {
+                saveAssignment();
+            });
+        })
         .fail(function(xhr, status, error) {
             console.error('API test failed:', status, error);
             console.error('Response:', xhr.responseText);
@@ -262,6 +305,101 @@ $(document).ready(function() {
             console.error('Failed to load departments');
         });
     }
+
+    function saveAssignment() {
+        const formData = {
+            PatientId: parseInt($('#patient-id').val()),
+            DepartmentId: parseInt($('#department-id').val()),
+            Current: parseInt($('#current-status').val()) === 1,
+            At: $('#assigned-at').val() || null,
+            Reason: $('#reason').val() || null,
+            Notes: $('#notes').val() || null
+        };
+        
+        // For Add functionality, we always create new records (never edit existing)
+        const isEditing = false; // Always false for Add button
+        
+        // Validation
+        if (!formData.PatientId || !formData.DepartmentId || formData.Current === null) {
+            showAlert('Vui lòng điền đầy đủ thông tin bắt buộc', 'warning');
+            return;
+        }
+        
+        // Always use POST for new assignments
+        const url = '/api/patient_department_detail';
+        const method = 'POST';
+        
+        // Show loading
+        $('#save-assignment').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
+        
+        $.ajax({
+            url: url,
+            type: method,
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            success: function(response) {
+                $('#assignmentModal').modal('hide');
+                showAlert('Thêm bệnh nhân vào khoa thành công!', 'success');
+                
+                // Reload page to refresh data
+                setTimeout(() => location.reload(), 1000);
+            },
+            error: function(xhr) {
+                const error = xhr.responseJSON?.error || 'Có lỗi xảy ra khi lưu dữ liệu';
+                showAlert(error, 'danger');
+            },
+            complete: function() {
+                $('#save-assignment').prop('disabled', false).html('<i class="fas fa-save"></i> Lưu');
+            }
+        });
+    }
+    
+    function addNewAssignment(data) {
+        console.log('Add new assignment for patient:', data);
+        
+        // Load departments for the dropdown
+        loadDepartmentsForModal();
+        
+        // Reset form
+        $('#assignment-form')[0].reset();
+        
+        // Show patient info
+        $('#patient-info-display').show();
+        $('#display-patient-id').text(data.PatientId);
+        $('#display-patient-name').text(data.PatientName || 'N/A');
+        $('#display-patient-age').text(data.PatientAge || 'N/A');
+        $('#display-patient-gender').text(data.PatientGender || 'N/A');
+        
+        // Pre-fill form for new assignment for this patient
+        $('#patient-id').val(data.PatientId);
+        $('#edit-id').val(''); // Always clear for new assignment
+        
+        // Set default values for new assignment
+        $('#current-status').val('1'); // Default to Current
+        $('#assigned-at').val(new Date().toISOString().slice(0, 16)); // Current time
+        
+        // Update modal title for adding new assignment
+        $('#assignmentModalLabel').text('Thêm bệnh nhân vào khoa mới');
+        
+        // Show modal
+        $('#assignmentModal').modal('show');
+    }
+    
+    function loadDepartmentsForModal() {
+        $.get('/api/department', function(response) {
+            const departments = response.department || [];
+            const select = $('#department-id');
+            
+            select.empty().append('<option value="">Chọn khoa...</option>');
+            
+            departments.forEach(function(dept) {
+                select.append(`<option value="${dept.DepartmentId}">${dept.DepartmentName}</option>`);
+            });
+        }).fail(function() {
+            console.error('Failed to load departments for modal');
+            showAlert('Không thể tải danh sách khoa', 'danger');
+        });
+    }
     
     function viewAssignment(data) {
         const assignedDate = data.At ? new Date(data.At) : null;
@@ -302,8 +440,6 @@ $(document).ready(function() {
             });
         }
     }
-    
-
     
     function showAlert(message, type = 'info', title = null) {
         const alertDiv = $(`

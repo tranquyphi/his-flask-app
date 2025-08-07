@@ -6,7 +6,14 @@
     <title>Patient Department Management</title>
     
     <!-- Bootstrap CSS -->
-    <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
+    <link href="{{ url_fo                                <select class="form-select" id="modalReason" name="Reason" required>
+                                    <option value="">Chọn lý do...</option>
+                                    <option value="DT">Điều trị</option>
+                                    <option value="PT">Phẫu thuật</option>
+                                    <option value="KCK">Khám CK</option>
+                                    <option value="CLS">CLS</option>
+                                    <option value="KH">Khác</option>
+                                </select>c', filename='css/bootstrap.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/fontawesome.all.min.css') }}" rel="stylesheet">
     
     <!-- DataTables CSS -->
@@ -213,6 +220,7 @@
                                         <th>Khoa</th>
                                         <th>Đang nằm</th>
                                         <th>Ngày vào</th>
+                                        <th>Lý do</th>
                                         <th>Thao tác</th>
                                     </tr>
                                 </thead>
@@ -221,6 +229,100 @@
                             </table>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Modal -->
+    <div class="modal fade" id="assignmentModal" tabindex="-1" aria-labelledby="assignmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignmentModalLabel">Quản lý vào khoa cho bệnh nhân</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Patient Info Display -->
+                    <div class="alert alert-info mb-3" id="patient-info-display" style="display: none;">
+                        <h6 class="mb-2"><i class="fas fa-user"></i> Thông tin bệnh nhân</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Mã:</strong> <span id="display-patient-id">-</span><br>
+                                <strong>Họ tên:</strong> <span id="display-patient-name">-</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Tuổi:</strong> <span id="display-patient-age">-</span><br>
+                                <strong>Giới:</strong> <span id="display-patient-gender">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success mb-3">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Hướng dẫn:</strong> Bệnh nhân có thể được chỉ định vào cùng một khoa nhiều lần trong các thời điểm khác nhau. 
+                        Sử dụng form này để thêm lịch sử vào khoa mới hoặc cập nhật thông tin hiện tại.
+                    </div>
+                    
+                    <form id="assignment-form">
+                        <input type="hidden" id="edit-id" name="id">
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="patient-id" class="form-label">Mã bệnh nhân <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="patient-id" name="PatientId" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="department-id" class="form-label">Khoa <span class="text-danger">*</span></label>
+                                <select class="form-select" id="department-id" name="DepartmentId" required>
+                                    <option value="">Chọn khoa...</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="current-status" class="form-label">Trạng thái <span class="text-danger">*</span></label>
+                                <select class="form-select" id="current-status" name="Current" required>
+                                    <option value="">Chọn trạng thái...</option>
+                                    <option value="1">Đang nằm viện</option>
+                                    <option value="0">Đã ra viện</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="reason" class="form-label">Lý do <span class="text-danger">*</span></label>
+                                <select class="form-select" id="reason" name="Reason" required>
+                                    <option value="">Chọn lý do...</option>
+                                    <option value="Điều trị">Điều trị</option>
+                                    <option value="Phẫu thuật">Phẫu thuật</option>
+                                    <option value="Khám CK">Khám CK</option>
+                                    <option value="CLS">CLS</option>
+                                    <option value="Khác">Khác</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="assigned-at" class="form-label">Thời gian vào khoa</label>
+                                <input type="datetime-local" class="form-control" id="assigned-at" name="At">
+                            </div>
+                            <div class="col-md-6">
+                                <!-- Empty column for layout balance -->
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">Ghi chú</label>
+                            <textarea class="form-control" id="notes" name="Notes" rows="3" placeholder="Ghi chú thêm về việc vào khoa..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="save-assignment">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
                 </div>
             </div>
         </div>

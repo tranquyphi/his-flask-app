@@ -152,6 +152,7 @@ class PatientDepartment(db.Model):
     DepartmentId = db.Column(db.SmallInteger, db.ForeignKey('Department.DepartmentId'), nullable=False)
     Current = db.Column(db.Boolean, default=False)
     At = db.Column(db.DateTime, default=datetime.utcnow)
+    Reason = db.Column(db.Enum('DT', 'PT', 'KCK', 'CLS', 'KH'), default='DT')
     
     def __repr__(self):
         return f'<PatientDepartment {self.id}: {self.PatientId}-{self.DepartmentId} at {self.At}>'
