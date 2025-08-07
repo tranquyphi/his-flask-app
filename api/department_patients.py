@@ -14,7 +14,7 @@ def get_department_patients(department_id):
         if not department:
             return jsonify({'error': 'Department not found'}), 404
         
-        # Query current patients in the department
+                # Query current patients in the department
         results = (
             db.session.query(
                 PatientDepartment.PatientId,

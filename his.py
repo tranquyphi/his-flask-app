@@ -7,7 +7,6 @@ from models import (
     Sign, Staff, Template, Test, Visit, VisitDiagnosis, VisitDocuments, VisitImage,
     VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, SignTemplate #,PatientsWithDepartment
 )
-from api.patient_departments import patient_dept_bp
 from api.department_patients import dept_patients_bp
 
 config_name = 'development'
@@ -77,31 +76,13 @@ register_model_api(SignTemplate, 'sign_template')
 
 # Register the Blueprint with the app (AFTER all routes are defined)
 app.register_blueprint(bp, url_prefix='/api')
-app.register_blueprint(patient_dept_bp, url_prefix='/api')
 app.register_blueprint(dept_patients_bp, url_prefix='/api')
 
 # Add UI routes
-@app.route('/patient_departments')
-def patient_departments_page():
-    return render_template('patient_departments.html')
-
-@app.route('/department_patients')
-def department_patients_page():
-    return render_template('department_patients.html')
-
 @app.route('/department_patients/<int:department_id>')
 def department_patients_specific(department_id):
     """Direct access to a specific department's patients - for authorized staff"""
     return render_template('department_patients_specific.html', department_id=department_id)
-
-@app.route('/test_datatables')
-def test_datatables_page():
-    return render_template('test_datatables.html')
-
-@app.route('/mobile_test')
-def mobile_test_page():
-    with open('mobile-test.html', 'r') as f:
-        return f.read()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
