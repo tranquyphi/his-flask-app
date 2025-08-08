@@ -130,7 +130,7 @@ Status tracking in `.vscode/prompts/front-end-expectation.md`:
 - 🚧 Visits: In progress
 - ⏳ Staff, Departments, Drugs, Tests, Procedures: Planned
 
-### Tabulator Integration Requirements
+
 - Download CSS/JS files locally to `/static/`
 - All tables must show related entity names (not IDs)
 - Action buttons as small icons for each row
