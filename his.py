@@ -70,9 +70,10 @@ register_model_api(VisitProc, 'visit_proc')
 register_model_api(VisitSign, 'visit_sign')
 register_model_api(VisitStaff, 'visit_staff')
 register_model_api(VisitTest, 'visit_test')
-register_model_api(TestTemplate, 'test_template')
-register_model_api(DrugTemplate, 'drug_template')
-register_model_api(SignTemplate, 'sign_template')
+
+# register_model_api(TestTemplate, 'test_template')
+# register_model_api(DrugTemplate, 'drug_template')
+#register_model_api(SignTemplate, 'sign_template')
 # register_model_api(PatientsWithDepartment, 'patient_with_department')
 
 # Register the Blueprint with the app (AFTER all routes are defined)

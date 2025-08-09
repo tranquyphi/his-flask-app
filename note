@@ -1,2 +1,35 @@
 gunicorn -w 4 -b 0.0.0.0:5000 his:app
 check error directly
+
+Git:
+# Branches Setup
+git checkout main
+git checkout -b 1-DepartmentPatient
+git push -u origin 1-DepartmentPatient
+
+# Workflow: BACKUP
+## === STEP 1: CHECK SYNC ===
+git checkout 2-Templates
+git fetch origin
+git status
+
+Look for: "Your branch is up to date with 'origin/branch-name'"
+
+## === STEP 2: CREATE CHECKPOINT ===
+git log --oneline -n 1  # Note this commit hash: 701a600
+
+## === STEP 3: START CODING ===
+ ... your development work ...
+
+# === STEP 4A: IF OK ===
+
+git add .
+git commit -m "feat: descriptive message"
+git push                    # Use this if tracking already set up
+# OR git push origin 2-Templates  # Use this if no tracking or being explicit
+
+# === STEP 4B: IF NOT OK (choose one) ===
+## Discard all changes:
+git checkout . && git clean -fd
+
+

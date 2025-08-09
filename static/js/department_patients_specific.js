@@ -258,8 +258,12 @@ $(document).ready(function() {
                     responsivePriority: 1
                 },
                 {
-                    targets: [0, 1], // Patient ID and Name
+                    targets: [1], // Patient Name - highest priority after actions
                     responsivePriority: 2
+                },
+                {
+                    targets: [0], // Patient ID - lower priority, hidden in mobile
+                    responsivePriority: 4
                 },
                 {
                     targets: [2, 6], // Age and days admitted
