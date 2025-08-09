@@ -127,6 +127,7 @@ def get_entities():
 
 Status tracking in `.vscode/prompts/front-end-expectation.md`:
 - ✅ Patients: DONE (full CRUD with department display)
+
 - 🚧 Visits: In progress
 - ⏳ Staff, Departments, Drugs, Tests, Procedures: Planned
 
@@ -144,3 +145,4 @@ Status tracking in `.vscode/prompts/front-end-expectation.md`:
 - Logs to `/var/log/his/`
 - Database connection via environment variables
 - Service dependencies: `mysql.service`
+

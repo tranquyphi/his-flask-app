@@ -1,13 +1,14 @@
-
 from flask import Flask, jsonify, request, Blueprint, render_template
 from datetime import datetime
 from models import (
     create_app, db,
-    BodySite, BodySystem, Department, Drug, ICD, Patient, Proc, PatientDepartment,
+    BodyPart, BodySite, BodySystem, Department, Drug, ICD, Patient, Proc, PatientDepartment,
     Sign, Staff, Template, Test, Visit, VisitDiagnosis, VisitDocuments, VisitImage,
     VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, SignTemplate #,PatientsWithDepartment
 )
 from api.department_patients import dept_patients_bp
+from api.body_sites import body_sites_bp
+from api.body_parts import body_parts_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -77,6 +78,8 @@ register_model_api(SignTemplate, 'sign_template')
 # Register the Blueprint with the app (AFTER all routes are defined)
 app.register_blueprint(bp, url_prefix='/api')
 app.register_blueprint(dept_patients_bp, url_prefix='/api')
+app.register_blueprint(body_sites_bp)
+app.register_blueprint(body_parts_bp)
 
 # Add UI routes
 @app.route('/department_patients/<int:department_id>')

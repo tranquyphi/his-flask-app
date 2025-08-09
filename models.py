@@ -34,11 +34,24 @@ def create_app(config_name=None):
 # ORM Models based on Database Schema
 # ===========================================
 
+class BodyPart(db.Model):
+    __tablename__ = 'BodyPart'
+    
+    BodyPartId = db.Column(db.SmallInteger, primary_key=True)
+    BodyPartName = db.Column(db.String(50))
+    
+    # Relationships
+    body_sites = db.relationship('BodySite', backref='body_part', lazy=True)
+    
+    def __repr__(self):
+        return f'<BodyPart {self.BodyPartName}>'
+
 class BodySite(db.Model):
     __tablename__ = 'BodySite'
     
     SiteId = db.Column(db.Integer, primary_key=True, autoincrement=True)
     SiteName = db.Column(db.String(100), nullable=False)
+    BodyPartId = db.Column(db.SmallInteger, db.ForeignKey('BodyPart.BodyPartId'))
     
     def __repr__(self):
         return f'<BodySite {self.SiteName}>'
