@@ -9,6 +9,7 @@ from models import (
 from api.department_patients import dept_patients_bp
 from api.body_sites import body_sites_bp
 from api.body_parts import body_parts_bp
+from api.excel_upload import excel_upload_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -81,6 +82,7 @@ app.register_blueprint(bp, url_prefix='/api')
 app.register_blueprint(dept_patients_bp, url_prefix='/api')
 app.register_blueprint(body_sites_bp)
 app.register_blueprint(body_parts_bp)
+app.register_blueprint(excel_upload_bp)
 
 # Add UI routes
 @app.route('/department_patients/<int:department_id>')
