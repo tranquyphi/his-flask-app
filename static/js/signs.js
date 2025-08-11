@@ -1,6 +1,7 @@
-// Signs CRUD & listing
+// Signs CRUD & listing (v3)
 $(document).ready(function(){
-  console.log('[Signs] Document ready');
+  console.log('[Signs] Document ready - script version 3, ts=' + Date.now());
+  if($.ajaxSetup){ $.ajaxSetup({cache:false}); }
   const tableEl = $('#signs-table');
   if(!tableEl.length){ console.error('[Signs] Table element #signs-table not found'); return; }
   if(!$.fn.DataTable){ console.error('[Signs] DataTables plugin not loaded'); }
@@ -10,9 +11,12 @@ $(document).ready(function(){
 
   function loadSystems(){
     console.log('[Signs] Loading body systems...');
-    return $.get('/api/body_system')
+    return $.get('/api/body_system?_=' + Date.now())
       .then(resp => {
-        const list = resp.body_system || [];
+        if(!resp || typeof resp !== 'object'){
+          console.warn('[Signs] /api/body_system unexpected response shape', resp);
+        }
+        const list = (resp && (resp.body_system || resp.body_systems || resp.bodySystems)) || [];
         console.log('[Signs] Body systems fetched:', list.length);
         if(!Array.isArray(list) || list.length === 0){
           console.warn('[Signs] No body systems returned; attempting fallback via /api/signs');
@@ -46,9 +50,12 @@ $(document).ready(function(){
   }
 
   function fallbackSystemsFromSigns(){
-    return $.get('/api/signs')
+    return $.get('/api/signs?_=' + Date.now())
       .then(resp => {
-        const signs = resp.signs || [];
+        if(!resp || typeof resp !== 'object'){
+          console.warn('[Signs] /api/signs unexpected response (systems fallback)', resp);
+        }
+        const signs = (resp && (resp.signs || resp.data || resp.items)) || [];
         const map = new Map();
         signs.forEach(s => { if(s.SystemId && !map.has(s.SystemId)) map.set(s.SystemId, s.SystemName); });
         const fallbackList = Array.from(map.entries()).map(([SystemId, SystemName]) => ({SystemId, SystemName}));
@@ -72,9 +79,13 @@ $(document).ready(function(){
     const sys = $('#filter-system').val(); if(sys) params.system_id = sys;
     const spec = $('#filter-speciality').val().trim(); if(spec) params.speciality = spec;
     console.log('Fetching /api/signs with params', params);
+    params._ = Date.now();
     return $.get('/api/signs', params)
       .then(resp => {
-        let rows = resp.signs || [];
+        if(!resp || typeof resp !== 'object'){
+          console.warn('[Signs] /api/signs unexpected response', resp);
+        }
+        let rows = (resp && (resp.signs || resp.data || resp.items)) || [];
         if(rows.length === 0) {
           console.log('Primary endpoint returned 0 rows, trying fallback /api/sign');
           return $.get('/api/sign').then(r2 => (r2.sign || r2.signs || [])).catch(()=>rows);
@@ -209,7 +220,14 @@ $(document).ready(function(){
 
   // Initialize
   $('#signs-debug').text('Initializing...').show();
-  loadSystems().then(refresh);
+  loadSystems().then(()=>{
+    console.log('[Signs] Systems load complete. systemsCache size=', systemsCache.length);
+    refresh();
+  });
+  // Extra network debug hook
+  window.__signsNetCheck = function(){
+    return fetch('/api/signs?__ping=1&_=' + Date.now()).then(r=>r.text()).then(t=>console.log('[Signs] Raw /api/signs text snippet:', t.slice(0,120)));
+  };
   $(window).on('load', ()=> console.log('[Signs] Window load complete'));
 
   function showAlert(html, type){
