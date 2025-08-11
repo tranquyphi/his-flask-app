@@ -11,6 +11,8 @@ from api.body_sites import body_sites_bp
 from api.body_parts import body_parts_bp
 from api.excel_upload import excel_upload_bp
 from api.signs import signs_bp
+from api.sign_template import sign_template_bp
+from api.sign_template_detail import sign_template_detail_bp
 from api.v2_endpoints import v2_bp
 
 config_name = 'development'
@@ -86,6 +88,8 @@ app.register_blueprint(body_sites_bp)
 app.register_blueprint(body_parts_bp)
 app.register_blueprint(excel_upload_bp)
 app.register_blueprint(signs_bp, url_prefix='/api')
+app.register_blueprint(sign_template_bp, url_prefix='/api')
+app.register_blueprint(sign_template_detail_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -97,6 +101,14 @@ def department_patients_specific(department_id):
 @app.route('/signs')
 def signs_page():
     return render_template('signs.html')
+
+@app.route('/sign-templates')
+def sign_templates_page():
+    return render_template('sign_templates.html')
+
+@app.route('/sign-templates/<int:template_id>/details')
+def sign_template_details_page(template_id):
+    return render_template('sign_template_details.html', template_id=template_id)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
