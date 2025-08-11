@@ -9,7 +9,11 @@ from models import (
 from api.department_patients import dept_patients_bp
 from api.body_sites import body_sites_bp
 from api.body_parts import body_parts_bp
+<<<<<<< HEAD
 from api.excel_upload import excel_upload_bp
+=======
+from api.signs import signs_bp
+>>>>>>> SIGN
 
 config_name = 'development'
 app = create_app(config_name)
@@ -82,13 +86,21 @@ app.register_blueprint(bp, url_prefix='/api')
 app.register_blueprint(dept_patients_bp, url_prefix='/api')
 app.register_blueprint(body_sites_bp)
 app.register_blueprint(body_parts_bp)
+<<<<<<< HEAD
 app.register_blueprint(excel_upload_bp)
+=======
+app.register_blueprint(signs_bp, url_prefix='/api')
+>>>>>>> SIGN
 
 # Add UI routes
 @app.route('/department_patients/<int:department_id>')
 def department_patients_specific(department_id):
     """Direct access to a specific department's patients - for authorized staff"""
     return render_template('department_patients_specific.html', department_id=department_id)
+
+@app.route('/signs')
+def signs_page():
+    return render_template('signs.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
