@@ -17,7 +17,7 @@ def create_app(config_name=None):
     """Create and configure Flask application with database connection.
     Uses 'frontend' directory for Jinja templates (renamed from default 'templates').
     """
-    app = Flask(__name__, template_folder='frontend')
+    app = Flask(__name__, template_folder='frontend', static_folder='static')
     
     # Determine configuration
     if config_name is None:
