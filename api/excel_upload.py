@@ -1,5 +1,10 @@
 import os
-import pandas as pd
+try:
+    import pandas as pd  # type: ignore
+    _PANDAS_AVAILABLE = True
+except Exception:
+    pd = None  # type: ignore
+    _PANDAS_AVAILABLE = False
 from flask import Blueprint, request, jsonify, current_app, render_template
 from werkzeug.utils import secure_filename
 import tempfile
@@ -19,6 +24,8 @@ def allowed_file(filename):
 @excel_upload_bp.route('/excel/upload')
 def excel_upload_page():
     """Render the Excel upload interface"""
+    if not _PANDAS_AVAILABLE:
+        return render_template('excel_upload.html', default_table='', error='Pandas library not installed on server')
     # Get table parameter if provided
     table = request.args.get('table', '')
     return render_template('excel_upload.html', default_table=table)
@@ -26,6 +33,8 @@ def excel_upload_page():
 @excel_upload_bp.route('/api/upload/tables')
 def get_available_tables():
     """Return a list of tables that support Excel upload"""
+    if not _PANDAS_AVAILABLE:
+        return jsonify({"error": "pandas not installed"}), 503
     tables = [
         {
             "id": "body_parts", 
