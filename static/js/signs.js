@@ -1,6 +1,9 @@
 // Signs CRUD & listing
 $(document).ready(function(){
+  console.log('[Signs] Document ready');
   const tableEl = $('#signs-table');
+  if(!tableEl.length){ console.error('[Signs] Table element #signs-table not found'); return; }
+  if(!$.fn.DataTable){ console.error('[Signs] DataTables plugin not loaded'); }
   let dt = null;
   let systemsCache = [];
   const modalEl = new bootstrap.Modal(document.getElementById('signModal'));
@@ -26,11 +29,26 @@ $(document).ready(function(){
     const t = $('#filter-type').val(); if(t !== '') params.type = t;
     const sys = $('#filter-system').val(); if(sys) params.system_id = sys;
     const spec = $('#filter-speciality').val().trim(); if(spec) params.speciality = spec;
-    return $.get('/api/signs', params).then(resp => resp.signs || []);
+    console.log('Fetching /api/signs with params', params);
+    return $.get('/api/signs', params)
+      .then(resp => {
+        let rows = resp.signs || [];
+        if(rows.length === 0) {
+          console.log('Primary endpoint returned 0 rows, trying fallback /api/sign');
+          return $.get('/api/sign').then(r2 => (r2.sign || r2.signs || [])).catch(()=>rows);
+        }
+        return rows;
+      })
+      .catch(err => {
+        console.error('Error fetching /api/signs', err);
+        showError('Không tải được dữ liệu từ /api/signs');
+        return [];
+      });
   }
 
   function renderTable(rows){
-    if(dt){ dt.destroy(); tableEl.empty(); }
+  console.log('[Signs] Rendering table with rows:', rows.length);
+  if(dt){ dt.destroy(); tableEl.find('tbody').empty(); }
   dt = tableEl.DataTable({
       data: rows,
       columns: [
@@ -44,6 +62,7 @@ $(document).ready(function(){
       pageLength: 25,
       order:[[1,'asc']],
       responsive:true,
+      autoWidth:false,
       language:{
         search: 'Tìm:',
         lengthMenu: 'Hiển thị _MENU_',
@@ -52,10 +71,17 @@ $(document).ready(function(){
         paginate: {previous:'Trước', next:'Tiếp'}
       }
     });
+    console.log('[Signs] DataTable initialized');
   }
 
   function refresh(){
-    fetchData().then(renderTable).catch(err => alert('Lỗi tải dữ liệu: '+ (err.responseJSON?.error || err.statusText)));
+    $('#alert-container').empty();
+    fetchData().then(rows => {
+      renderTable(rows);
+      if(rows.length === 0){
+        showInfo('Không có dấu hiệu phù hợp bộ lọc.');
+      }
+    }).catch(err => showError('Lỗi tải dữ liệu: '+ (err?.responseJSON?.error || err?.statusText || err)));
   }
 
   function clearForm(){
@@ -118,4 +144,13 @@ $(document).ready(function(){
 
   // Initialize
   loadSystems().then(refresh);
+  $(window).on('load', ()=> console.log('[Signs] Window load complete'));
+
+  function showAlert(html, type){
+    const id = 'alert-'+Date.now();
+    $('#alert-container').append(`<div id='${id}' class='alert alert-${type} py-1 my-2'>${html}</div>`);
+    setTimeout(()=> $('#'+id).fadeOut(400, function(){ $(this).remove(); }), 4000);
+  }
+  function showError(msg){ showAlert(`<i class='fas fa-exclamation-triangle me-1'></i>${msg}`,'danger'); }
+  function showInfo(msg){ showAlert(`<i class='fas fa-info-circle me-1'></i>${msg}`,'info'); }
 });
