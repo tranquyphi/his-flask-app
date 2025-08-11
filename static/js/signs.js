@@ -9,18 +9,60 @@ $(document).ready(function(){
   const modalEl = new bootstrap.Modal(document.getElementById('signModal'));
 
   function loadSystems(){
-    return $.get('/api/body_system').then(resp => {
-      const list = resp.body_system || [];
-      systemsCache = list;
-      const select = $('#filter-system');
-      const formSelect = $('#SystemId');
-      select.empty().append('<option value="">Hệ cơ quan (tất cả)</option>');
-      formSelect.empty();
-      list.forEach(sys => {
-        select.append(`<option value="${sys.SystemId}">${sys.SystemName}</option>`);
-        formSelect.append(`<option value="${sys.SystemId}">${sys.SystemName}</option>`);
+    console.log('[Signs] Loading body systems...');
+    return $.get('/api/body_system')
+      .then(resp => {
+        const list = resp.body_system || [];
+        console.log('[Signs] Body systems fetched:', list.length);
+        if(!Array.isArray(list) || list.length === 0){
+          console.warn('[Signs] No body systems returned; attempting fallback via /api/signs');
+          return fallbackSystemsFromSigns();
+        }
+        populateSystems(list);
+        return list;
+      })
+      .catch(err => {
+        console.error('[Signs] Error loading body systems:', err);
+        showError('Không tải được danh sách hệ cơ quan');
+        return fallbackSystemsFromSigns();
       });
+  }
+
+  function populateSystems(list){
+    systemsCache = list;
+    const select = $('#filter-system');
+    const formSelect = $('#SystemId');
+    select.empty().append('<option value="">Hệ cơ quan (tất cả)</option>');
+    formSelect.empty();
+    list.forEach(sys => {
+      if(sys && sys.SystemId !== undefined){
+        select.append(`<option value="${sys.SystemId}">${sys.SystemName || ('Hệ '+sys.SystemId)}</option>`);
+        formSelect.append(`<option value="${sys.SystemId}">${sys.SystemName || ('Hệ '+sys.SystemId)}</option>`);
+      }
     });
+    if(list.length === 0){
+      select.append('<option disabled>(Không có dữ liệu hệ)</option>');
+    }
+  }
+
+  function fallbackSystemsFromSigns(){
+    return $.get('/api/signs')
+      .then(resp => {
+        const signs = resp.signs || [];
+        const map = new Map();
+        signs.forEach(s => { if(s.SystemId && !map.has(s.SystemId)) map.set(s.SystemId, s.SystemName); });
+        const fallbackList = Array.from(map.entries()).map(([SystemId, SystemName]) => ({SystemId, SystemName}));
+        console.log('[Signs] Fallback systems derived from signs:', fallbackList.length);
+        populateSystems(fallbackList);
+        if(fallbackList.length === 0){
+          showInfo('Không tìm thấy Hệ cơ quan để lọc');
+        }
+        return fallbackList;
+      })
+      .catch(err => {
+        console.error('[Signs] Fallback derivation failed:', err);
+        return [];
+      });
   }
 
   function fetchData(){
