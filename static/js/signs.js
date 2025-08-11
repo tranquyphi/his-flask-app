@@ -72,6 +72,27 @@ $(document).ready(function(){
       }
     });
     console.log('[Signs] DataTable initialized');
+    setTimeout(()=>{
+      const displayed = tableEl.find('tbody tr').length;
+      if(rows.length && !displayed){
+        console.warn('[Signs] Fallback manual render triggered');
+        const tbody = tableEl.find('tbody');
+        tbody.empty();
+        rows.forEach(r=>{
+          tbody.append(`<tr data-id='${r.SignId}'>
+            <td style='display:none'>${r.SignId}</td>
+            <td>${escapeHtml(r.SignDesc||'')}</td>
+            <td>${r.SignType?'<span class=\"badge bg-danger\">Thực thể</span>':'<span class=\"badge bg-info text-dark\">Cơ năng</span>'}</td>
+            <td>${escapeHtml(r.SystemName||'')}</td>
+            <td>${escapeHtml(r.Speciality||'')}</td>
+            <td><div class='btn-group btn-group-sm'>
+              <button class='btn btn-outline-success btn-edit' title='Sửa'><i class='fas fa-edit'></i></button>
+              <button class='btn btn-outline-danger btn-del' title='Xóa'><i class='fas fa-trash'></i></button>
+            </div></td>
+          </tr>`);
+        });
+      }
+    }, 200);
   }
 
   function refresh(){
@@ -98,7 +119,7 @@ $(document).ready(function(){
     modalEl.show();
   });
 
-  function debounce(fn, wait){ let t; return function(){ clearTimeout(t); t=setTimeout(fn, wait); }; }
+  function debounce(fn, wait){ let t; return function(){ const ctx=this, args=arguments; clearTimeout(t); t=setTimeout(()=>fn.apply(ctx,args), wait); }; }
   $('#btn-refresh, #filter-type, #filter-system').on('click change', refresh);
   $('#search-desc, #filter-speciality').on('keyup', debounce(refresh, 400));
 
@@ -153,4 +174,6 @@ $(document).ready(function(){
   }
   function showError(msg){ showAlert(`<i class='fas fa-exclamation-triangle me-1'></i>${msg}`,'danger'); }
   function showInfo(msg){ showAlert(`<i class='fas fa-info-circle me-1'></i>${msg}`,'info'); }
+  function escapeHtml(str){ return String(str).replace(/[&<>"']/g, s=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[s])); }
+  window.__signsDebug = { reload: refresh };
 });
