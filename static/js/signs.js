@@ -72,6 +72,7 @@ $(document).ready(function(){
       }
     });
     console.log('[Signs] DataTable initialized');
+  $('#signs-debug').text('Loaded rows: '+rows.length).show();
     setTimeout(()=>{
       const displayed = tableEl.find('tbody tr').length;
       if(rows.length && !displayed){
