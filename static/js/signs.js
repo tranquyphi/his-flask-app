@@ -88,7 +88,17 @@ $(document).ready(function(){
         let rows = (resp && (resp.signs || resp.data || resp.items)) || [];
         if(rows.length === 0) {
           console.log('Primary endpoint returned 0 rows, trying fallback /api/sign');
-          return $.get('/api/sign').then(r2 => (r2.sign || r2.signs || [])).catch(()=>rows);
+          return $.get('/api/sign').then(r2 => {
+            const fallbackRows = r2.sign || r2.signs || [];
+            // Enrich fallback data with SystemName from cache
+            return fallbackRows.map(row => {
+              if(!row.SystemName && row.SystemId) {
+                const system = systemsCache.find(s => s.SystemId == row.SystemId);
+                row.SystemName = system ? system.SystemName : `Hệ ${row.SystemId}`;
+              }
+              return row;
+            });
+          }).catch(()=>rows);
         }
         return rows;
       })
@@ -108,7 +118,9 @@ $(document).ready(function(){
     {data:'SignId', title:'ID', visible:false},
         {data:'SignDesc', title:'Mô tả'},
         {data:'SignType', title:'Loại', render:(d)=> d?'<span class="badge bg-danger">Thực thể</span>':'<span class="badge bg-info text-dark">Cơ năng</span>'},
-        {data:'SystemName', title:'Hệ'},
+        {data:'SystemName', title:'Hệ', defaultContent:'N/A', render: function(data, type, row) {
+          return data || row.SystemName || `Hệ ${row.SystemId || 'N/A'}`;
+        }},
         {data:'Speciality', title:'Chuyên khoa', defaultContent:''},
         {data:null, title:'', orderable:false, width:'90px', render:(row)=> `\n          <div class='btn-group btn-group-sm'>\n            <button class='btn btn-outline-success btn-edit' title='Sửa'><i class='fas fa-edit'></i></button>\n            <button class='btn btn-outline-danger btn-del' title='Xóa'><i class='fas fa-trash'></i></button>\n          </div>`}
       ],

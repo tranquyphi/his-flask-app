@@ -39,7 +39,7 @@ class Config:
     MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB
     
     # Static File Versioning (increment when JS/CSS changes)
-    STATIC_VERSION = os.getenv('STATIC_VERSION', '1.1')
+    STATIC_VERSION = os.getenv('STATIC_VERSION', '1.2')
     
     # Security Settings
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
