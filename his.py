@@ -11,6 +11,7 @@ from api.body_sites import body_sites_bp
 from api.body_parts import body_parts_bp
 from api.excel_upload import excel_upload_bp
 from api.signs import signs_bp
+from api.v2_endpoints import v2_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -85,6 +86,7 @@ app.register_blueprint(body_sites_bp)
 app.register_blueprint(body_parts_bp)
 app.register_blueprint(excel_upload_bp)
 app.register_blueprint(signs_bp, url_prefix='/api')
+app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
 @app.route('/department_patients/<int:department_id>')
