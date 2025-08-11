@@ -84,28 +84,33 @@ $(document).ready(function(){
       .then(resp => {
         if(!resp || typeof resp !== 'object'){
           console.warn('[Signs] /api/signs unexpected response', resp);
+          return [];
         }
         let rows = (resp && (resp.signs || resp.data || resp.items)) || [];
-        if(rows.length === 0) {
-          console.log('Primary endpoint returned 0 rows, trying fallback /api/sign');
-          return $.get('/api/sign').then(r2 => {
-            const fallbackRows = r2.sign || r2.signs || [];
-            // Enrich fallback data with SystemName from cache
-            return fallbackRows.map(row => {
-              if(!row.SystemName && row.SystemId) {
-                const system = systemsCache.find(s => s.SystemId == row.SystemId);
-                row.SystemName = system ? system.SystemName : `Hệ ${row.SystemId}`;
-              }
-              return row;
-            });
-          }).catch(()=>rows);
-        }
+        console.log('[Signs] Primary endpoint returned:', rows.length, 'rows');
+        // Don't use fallback for legitimate empty results - only for API errors
         return rows;
       })
       .catch(err => {
         console.error('Error fetching /api/signs', err);
-        showError('Không tải được dữ liệu từ /api/signs');
-        return [];
+        console.log('API error occurred, trying fallback /api/sign');
+        // Only use fallback when there's an actual API error
+        return $.get('/api/sign').then(r2 => {
+          const fallbackRows = r2.sign || r2.signs || [];
+          console.log('[Signs] Fallback returned:', fallbackRows.length, 'rows');
+          // Enrich fallback data with SystemName from cache
+          return fallbackRows.map(row => {
+            if(!row.SystemName && row.SystemId) {
+              const system = systemsCache.find(s => s.SystemId == row.SystemId);
+              row.SystemName = system ? system.SystemName : `Hệ ${row.SystemId}`;
+            }
+            return row;
+          });
+        }).catch(fallbackErr => {
+          console.error('Fallback also failed:', fallbackErr);
+          showError('Không tải được dữ liệu từ cả hai API endpoint');
+          return [];
+        });
       });
   }
 
