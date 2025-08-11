@@ -419,6 +419,6 @@
         // Pass department ID from Flask template to JavaScript
         const DEPARTMENT_ID = {{ department_id }};
     </script>
-    <script src="{{ url_for('static', filename='js/department_patients_specific.js') }}?v={{ range(1000, 9999) | random }}"></script>
+    <script src="{{ url_for('static', filename='js/department_patients_specific.js') }}?v={{ 'js/department_patients_specific.js' | static_version }}"></script>
 </body>
 </html>

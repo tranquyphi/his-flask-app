@@ -30,6 +30,16 @@ def create_app(config_name=None):
     # Initialize database with app
     db.init_app(app)
     
+    # Register static versioning filter for cache management
+    try:
+        from utils.static_versioning import register_static_version_filter
+        register_static_version_filter(app)
+    except ImportError:
+        # Fallback if utils not available
+        @app.template_filter('static_version')
+        def static_version_filter(filename):
+            return app.config.get('STATIC_VERSION', '1.1')
+    
     return app
 
 # ===========================================
