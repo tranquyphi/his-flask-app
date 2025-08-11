@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Body Sites</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="/static/css/fontawesome.all.min.css" />
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/jquery.dataTables.min.js"></script>
+    <script src="/static/js/dataTables.bootstrap5.min.js"></script>
+    <script src="/static/js/excel_import.js"></script>
+    
+    <style>
+        .btn-icon {
+            width: 38px;
+            height: 38px;
+            padding: 6px 0;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 14px;
+            line-height: 1.8;
+            margin-right: 5px;
+        }
+        .table-action-buttons {
+            white-space: nowrap;
+        }
+    </style>
+</head>
+<body class="p-3">
+    <!-- Alert for notifications -->
+    <div id="alertMessage" class="alert alert-success alert-dismissible fade" role="alert" style="display: none;">
+        <i class="fas fa-check-circle me-2"></i>
+        <span id="alertText"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    
+    <h1>Body Sites</h1>
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label for="filterBodyPart" class="form-label">Filter by Body Part</label>
+            <select id="filterBodyPart" class="form-select">
+                <option value="">All Body Parts</option>
+                <!-- Options will be loaded from API -->
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="searchBox" class="form-label">Search</label>
+            <input type="text" id="searchBox" class="form-control" placeholder="Search site names...">
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button id="btnClear" class="btn btn-secondary w-100">
+                <i class="fas fa-eraser"></i> Clear All
+            </button>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button id="btnNew" class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#siteModal">
+                <i class="fas fa-plus"></i> New
+            </button>
+        </div>
+    </div>
+
+    <table id="sitesTable" class="table table-striped" style="width:100%">
+        <thead>
+            <tr>
+                <th>SiteId</th>
+                <th>SiteName</th>
+                <th>Body Part</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <!-- Modal -->
+    <div class="modal fade" id="siteModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="modalTitle">New Body Site</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form id="siteForm">
+                  <input type="hidden" id="SiteId" />
+                  <div class="mb-3">
+                      <label class="form-label">Site Name</label>
+                      <input type="text" id="SiteName" class="form-control" required />
+                  </div>
+                  <div class="mb-3">
+                      <label class="form-label">Body Part</label>
+                      <select id="BodyPartId" class="form-select">
+                          <option value="">-- Select Body Part --</option>
+                          <!-- Options will be loaded from API -->
+                      </select>
+                  </div>
+              </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="fas fa-times"></i> Close
+            </button>
+            <button type="button" id="saveSite" class="btn btn-primary">
+              <i class="fas fa-save"></i> Save
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+<script>
+let table;
+let bodyParts = [];
+let allData = []; // Store all data for client-side filtering
+
+function loadBodyParts() {
+    return $.getJSON('/api/body_parts', function(data) {
+        bodyParts = data;
+        // Populate filter dropdown
+        const filterSelect = $('#filterBodyPart');
+        filterSelect.empty().append('<option value="">All Body Parts</option>');
+        
+        // Populate modal dropdown
+        const modalSelect = $('#BodyPartId');
+        modalSelect.empty().append('<option value="">-- Select Body Part --</option>');
+        
+        data.forEach(part => {
+            filterSelect.append(`<option value="${part.BodyPartId}">${part.BodyPartName}</option>`);
+            modalSelect.append(`<option value="${part.BodyPartId}">${part.BodyPartName}</option>`);
+        });
+    });
+}
+
+function fetchData(bodyPartId=null){
+    let url = '/api/body_sites';
+    if(bodyPartId){
+        url += '?BodyPartId=' + encodeURIComponent(bodyPartId);
+    }
+    $.getJSON(url, function(data){
+        allData = data; // Store all data for filtering
+        displayFilteredData(data);
+    });
+}
+
+function displayFilteredData(data) {
+    table.clear();
+    data.forEach(function(row) {
+        // Create action buttons HTML directly
+        var actionsHtml = 
+            '<div class="table-action-buttons">' +
+            '  <button class="btn btn-icon btn-primary editBtn" data-id="' + row.SiteId + '" title="Edit">' +
+            '    <i class="fas fa-edit"></i>' +
+            '  </button>' +
+            '  <button class="btn btn-icon btn-danger deleteBtn" data-id="' + row.SiteId + '" title="Delete">' +
+            '    <i class="fas fa-trash-alt"></i>' +
+            '  </button>' +
+            '</div>';
+            
+        // Add row with HTML string
+        table.row.add([
+            row.SiteId,
+            row.SiteName,
+            row.BodyPartName || '(No Body Part)',
+            actionsHtml
+        ]);
+    });
+    table.draw();
+}
+
+function applyFilters() {
+    const bodyPartId = $('#filterBodyPart').val();
+    const searchTerm = $('#searchBox').val().toLowerCase();
+    
+    if (!bodyPartId && !searchTerm) {
+        // If no filters, fetch all data
+        fetchData();
+        return;
+    }
+    
+    // If we have a bodyPartId filter, fetch from server
+    if (bodyPartId && !searchTerm) {
+        fetchData(bodyPartId);
+        return;
+    }
+    
+    // Client-side filtering (either both filters or just search)
+    if (allData.length === 0) {
+        // If we don't have data yet, fetch it first
+        fetchData().then(() => applyFilters());
+        return;
+    }
+    
+    // Apply filters to our cached data
+    let filtered = allData;
+    
+    // Apply body part filter if selected
+    if (bodyPartId) {
+        filtered = filtered.filter(row => row.BodyPartId == bodyPartId);
+    }
+    
+    // Apply search filter if entered
+    if (searchTerm) {
+        filtered = filtered.filter(row => 
+            (row.SiteName && row.SiteName.toLowerCase().includes(searchTerm)) || 
+            (row.BodyPartName && row.BodyPartName.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // Display the filtered data
+    displayFilteredData(filtered);
+}
+
+$(document).ready(function(){
+    // Initialize DataTable with search functionality
+    table = $('#sitesTable').DataTable({
+        searching: false // Disable built-in search as we'll implement our own
+    });
+    
+    // Load body parts then fetch data
+    loadBodyParts().then(() => fetchData());
+
+    // Filter when body part dropdown changes
+    $('#filterBodyPart').change(function() {
+        applyFilters();
+    });
+    
+    // Search as you type
+    $('#searchBox').on('keyup', function() {
+        applyFilters();
+    });
+    
+    // Clear all filters
+    $('#btnClear').click(()=>{
+        $('#filterBodyPart').val('');
+        $('#searchBox').val('');
+        applyFilters();
+    });
+
+    $('#btnNew').click(()=>{
+        $('#SiteId').val('');
+        $('#SiteName').val('');
+        $('#BodyPartId').val('');
+        $('#modalTitle').text('New Body Site');
+    });
+
+    $('#sitesTable').on('click', '.editBtn', function(){
+        const id = $(this).data('id');
+        $.getJSON('/api/body_sites/' + id, function(data){
+            $('#SiteId').val(data.SiteId);
+            $('#SiteName').val(data.SiteName);
+            $('#BodyPartId').val(data.BodyPartId || '');
+            $('#modalTitle').text('Edit Body Site');
+            var myModal = new bootstrap.Modal(document.getElementById('siteModal'));
+            myModal.show();
+        });
+    });
+
+    // Function to show notification
+    function showAlert(message, type = 'success') {
+        const alertEl = $('#alertMessage');
+        
+        // Set alert type
+        alertEl.removeClass('alert-success alert-danger alert-warning')
+               .addClass('alert-' + type);
+        
+        // Set icon based on alert type
+        let icon = alertEl.find('i').first();
+        icon.removeClass('fa-check-circle fa-exclamation-triangle fa-exclamation-circle');
+        
+        if (type === 'success') {
+            icon.addClass('fa-check-circle');
+        } else if (type === 'warning') {
+            icon.addClass('fa-exclamation-triangle');
+        } else if (type === 'danger') {
+            icon.addClass('fa-exclamation-circle');
+        }
+        
+        // Set message
+        $('#alertText').text(message);
+        
+        // Show the alert
+        alertEl.show().addClass('show');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            alertEl.removeClass('show');
+            setTimeout(() => alertEl.hide(), 150);
+        }, 5000);
+    }
+    
+    $('#saveSite').click(()=>{
+        const id = $('#SiteId').val();
+        const payload = {
+            SiteName: $('#SiteName').val(),
+            BodyPartId: $('#BodyPartId').val() || null
+        };
+        if(!payload.SiteName){
+            alert('Site Name is required'); return;
+        }
+        if(id){
+            $.ajax({
+                url:'/api/body_sites/' + id,
+                type:'PUT',
+                contentType:'application/json',
+                data: JSON.stringify(payload),
+                success: ()=>{ 
+                    // Refresh data with current filters applied
+                    applyFilters();
+                    // Show success message
+                    showAlert('Body site updated successfully');
+                }
+            });
+        } else {
+            $.ajax({
+                url:'/api/body_sites',
+                type:'POST',
+                contentType:'application/json',
+                data: JSON.stringify(payload),
+                success: (data)=>{ 
+                    // Refresh data with current filters applied
+                    applyFilters();
+                    // Show success message with the site ID
+                    showAlert(`New body site created successfully with ID: ${data.SiteId}`);
+                }
+            });
+        }
+        const modalEl = document.getElementById('siteModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
+    });
+
+    $('#sitesTable').on('click', '.deleteBtn', function(){
+        if(!confirm('Delete this body site?')) return;
+        const id = $(this).data('id');
+        $.ajax({
+            url:'/api/body_sites/' + id,
+            type:'DELETE',
+            success: ()=>{ 
+                // Refresh with current filters applied
+                applyFilters(); 
+                // Show deletion message
+                showAlert('Body site deleted successfully', 'warning');
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>

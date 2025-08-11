@@ -14,8 +14,10 @@ from config import config
 db = SQLAlchemy()
 
 def create_app(config_name=None):
-    """Create and configure Flask application with database connection"""
-    app = Flask(__name__)
+    """Create and configure Flask application with database connection.
+    Uses 'frontend' directory for Jinja templates (renamed from default 'templates').
+    """
+    app = Flask(__name__, template_folder='frontend')
     
     # Determine configuration
     if config_name is None:
