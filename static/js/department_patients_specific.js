@@ -260,13 +260,7 @@ $(document).ready(function() {
                 {
                     targets: [0, 1], // Patient ID and Name
                     responsivePriority: 2
-                },
-                {
-                    targets: [2, 6], // Age and days admitted
-                    responsivePriority: 3
-                }
-            ],
-            language: {
+ language: {
                 emptyTable: "Không có bệnh nhân nào đang nằm viện",
                 search: "Tìm kiếm:",
                 lengthMenu: "Hiển thị _MENU_ bệnh nhân mỗi trang",
