@@ -110,7 +110,7 @@ try{if(window.jQuery){ $.ajaxSetup({cache:false}); }}catch(e){}
 // Stash load timestamp for debugging
 window.__signsPageLoadedAt = Date.now();
 </script>
-	<script src="/static/js/signs.js?v=3"></script>
+	<script src="/static/js/signs.js?v={{ 'js/signs.js' | static_version }}"></script>
 <script>
 // Post-load self check: was signs.js executed?
 setTimeout(function(){
@@ -119,7 +119,7 @@ setTimeout(function(){
 		if(dbg){
 			dbg.style.display='block';
 			dbg.style.color='red';
-			dbg.textContent='[signs.js NOT EXECUTED] -> Hard refresh (Ctrl+Shift+R). If persists, check 404 for /static/js/signs.js?v=3';
+			dbg.textContent='[signs.js NOT EXECUTED] -> Hard refresh (Ctrl+Shift+R). Check console for errors.';
 		}
 		console.error('[Signs] signs.js did not initialize. Possible cache / 404 / JS error before execution.');
 	}
