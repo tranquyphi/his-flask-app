@@ -260,7 +260,6 @@ $(document).ready(function() {
                 {
                     targets: [1], // Patient Name - highest priority after actions
                     responsivePriority: 2
-<<<<<<< HEAD
                 },
                 {
                     targets: [0], // Patient ID - lower priority, hidden in mobile
@@ -272,9 +271,6 @@ $(document).ready(function() {
                 }
             ],
             language: {
-=======
- language: {
->>>>>>> SIGN
                 emptyTable: "Không có bệnh nhân nào đang nằm viện",
                 search: "Tìm kiếm:",
                 lengthMenu: "Hiển thị _MENU_ bệnh nhân mỗi trang",
