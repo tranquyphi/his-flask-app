@@ -98,6 +98,7 @@ $(document).ready(function(){
 
   function refresh(){
     $('#alert-container').empty();
+  $('#signs-debug').text('Fetching data...').show();
     fetchData().then(rows => {
       renderTable(rows);
       if(rows.length === 0){
@@ -165,6 +166,7 @@ $(document).ready(function(){
   });
 
   // Initialize
+  $('#signs-debug').text('Initializing...').show();
   loadSystems().then(refresh);
   $(window).on('load', ()=> console.log('[Signs] Window load complete'));
 
