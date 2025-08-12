@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HIS - Hospital Information System</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+        }
+        .category-header {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <div class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 mb-3">
+                <i class="fas fa-hospital-alt me-3"></i>
+                Hospital Information System
+            </h1>
+            <p class="lead">Hệ thống quản lý thông tin bệnh viện - HIS</p>
+            <p class="mb-0">Chọn module để bắt đầu làm việc</p>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <!-- Core Management Section -->
+        <div class="category-header">
+            <h2 class="h3 text-primary mb-0">
+                <i class="fas fa-cogs me-2"></i>
+                Quản lý cơ bản
+            </h2>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-building fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Quản lý Khoa</h5>
+                        <p class="card-text text-muted">Danh sách các khoa, phòng ban trong bệnh viện</p>
+                        <a href="/departments" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-3">
+                            <i class="fas fa-user-md fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Quản lý Nhân viên</h5>
+                        <p class="card-text text-muted">Thông tin bác sĩ, điều dưỡng và nhân viên</p>
+                        <a href="/staff" class="btn btn-success">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-info mb-3">
+                            <i class="fas fa-users fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Bệnh nhân theo Khoa</h5>
+                        <p class="card-text text-muted">Xem danh sách bệnh nhân theo từng khoa</p>
+                        <div class="btn-group">
+                            <a href="/department_patients/1" class="btn btn-info btn-sm">Khoa Nhi</a>
+                            <a href="/department_patients/2" class="btn btn-info btn-sm">HSCC</a>
+                            <a href="/department_patients/3" class="btn btn-info btn-sm">P.Khám</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clinical Data Section -->
+        <div class="category-header">
+            <h2 class="h3 text-success mb-0">
+                <i class="fas fa-stethoscope me-2"></i>
+                Dữ liệu lâm sàng
+            </h2>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-heartbeat fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Quản lý Dấu hiệu</h5>
+                        <p class="card-text text-muted">Danh sách các dấu hiệu lâm sàng và cận lâm sàng</p>
+                        <a href="/signs" class="btn btn-warning">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-danger mb-3">
+                            <i class="fas fa-clipboard-list fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Mẫu Dấu hiệu</h5>
+                        <p class="card-text text-muted">Quản lý mẫu dấu hiệu theo khoa và loại bệnh án</p>
+                        <a href="/sign-templates" class="btn btn-danger">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-secondary mb-3">
+                            <i class="fas fa-map-marked-alt fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Vị trí Cơ thể</h5>
+                        <p class="card-text text-muted">Quản lý các vị trí trên cơ thể người</p>
+                        <a href="/body-sites" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Medical Resources Section -->
+        <div class="category-header">
+            <h2 class="h3 text-info mb-0">
+                <i class="fas fa-medkit me-2"></i>
+                Tài nguyên y tế
+            </h2>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-primary mb-3">
+                            <i class="fas fa-pills fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Quản lý Thuốc</h5>
+                        <p class="card-text text-muted">Danh sách thuốc, liều lượng và hướng dẫn sử dụng</p>
+                        <a href="/drugs" class="btn btn-primary">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-3">
+                            <i class="fas fa-vial fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Quản lý Xét nghiệm</h5>
+                        <p class="card-text text-muted">Danh sách các loại xét nghiệm và giá thành</p>
+                        <a href="/tests" class="btn btn-success">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-procedures fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Quản lý Thủ thuật</h5>
+                        <p class="card-text text-muted">Danh sách các thủ thuật y tế và quy trình</p>
+                        <a href="/procedures" class="btn btn-warning">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Section -->
+        <div class="category-header">
+            <h2 class="h3 text-secondary mb-0">
+                <i class="fas fa-tools me-2"></i>
+                Công cụ hỗ trợ
+            </h2>
+        </div>
+        
+        <div class="row g-4 mb-5">
+            <div class="col-md-6">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-3">
+                            <i class="fas fa-file-excel fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Import Excel</h5>
+                        <p class="card-text text-muted">Nhập dữ liệu từ file Excel vào hệ thống</p>
+                        <a href="/excel-upload" class="btn btn-success">
+                            <i class="fas fa-upload me-1"></i> Truy cập
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-info mb-3">
+                            <i class="fas fa-chart-bar fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">API Endpoint</h5>
+                        <p class="card-text text-muted">Truy cập các API endpoint để tích hợp hệ thống</p>
+                        <a href="/api" class="btn btn-info">
+                            <i class="fas fa-code me-1"></i> API Docs
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Information -->
+        <div class="text-center mt-5 pt-4 border-top">
+            <p class="text-muted mb-2">
+                <i class="fas fa-hospital me-2"></i>
+                Hospital Information System (HIS) - Version 2.0
+            </p>
+            <p class="text-muted small">
+                © 2025 - Hệ thống quản lý thông tin bệnh viện
+            </p>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Add some interactive effects -->
+    <script>
+        // Add loading effect for cards
+        document.querySelectorAll('.card-hover').forEach(card => {
+            card.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    const btn = e.target;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Đang tải...';
+                    btn.classList.add('disabled');
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('disabled');
+                    }, 2000);
+                }
+            });
+        });
+        
+        // Add current time display
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleString('vi-VN');
+            document.title = `HIS - ${timeString}`;
+        }
+        
+        setInterval(updateTime, 60000); // Update every minute
+        updateTime();
+    </script>
+</body>
+</html>
