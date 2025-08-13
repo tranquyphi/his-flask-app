@@ -18,6 +18,7 @@ from api.drug_template import drug_template_bp
 from api.drug_template_detail import drug_template_detail_bp
 from api.drug_groups import drug_groups_bp
 from api.visits import visits_bp
+from api.patient_visits import patient_visits_bp
 from api.v2_endpoints import v2_bp
 
 config_name = 'development'
@@ -101,6 +102,7 @@ app.register_blueprint(drug_template_bp, url_prefix='/api')
 app.register_blueprint(drug_template_detail_bp, url_prefix='/api')
 app.register_blueprint(drug_groups_bp, url_prefix='/api')
 app.register_blueprint(visits_bp, url_prefix='/api')
+app.register_blueprint(patient_visits_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -166,6 +168,15 @@ def staff_page():
 @app.route('/body-sites')
 def body_sites_page():
     return render_template('body_sites.html')
+
+@app.route('/patient-visits')
+def patient_visits_page():
+    return render_template('patient_visits.html')
+
+@app.route('/patient-visits/<string:patient_id>')
+def patient_visits_specific(patient_id):
+    """Direct access to a specific patient's visits history"""
+    return render_template('patient_visits.html', patient_id=patient_id)
 
 @app.route('/excel-upload')
 def excel_upload_page():
