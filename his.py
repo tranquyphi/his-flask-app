@@ -17,6 +17,7 @@ from api.drugs import drugs_bp
 from api.drug_template import drug_template_bp
 from api.drug_template_detail import drug_template_detail_bp
 from api.drug_groups import drug_groups_bp
+from api.visits import visits_bp
 from api.v2_endpoints import v2_bp
 
 config_name = 'development'
@@ -99,6 +100,7 @@ app.register_blueprint(drugs_bp, url_prefix='/api')
 app.register_blueprint(drug_template_bp, url_prefix='/api')
 app.register_blueprint(drug_template_detail_bp, url_prefix='/api')
 app.register_blueprint(drug_groups_bp, url_prefix='/api')
+app.register_blueprint(visits_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -144,6 +146,10 @@ def drug_template_details_page(template_id):
 @app.route('/drug-groups')
 def drug_groups_page():
     return render_template('drug_groups.html')
+
+@app.route('/visits')
+def visits_page():
+    return render_template('visits.html')
 
 @app.route('/tests')
 def tests_page():

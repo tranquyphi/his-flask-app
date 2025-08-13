@@ -264,13 +264,25 @@ class Visit(db.Model):
     StaffId = db.Column(db.SmallInteger, db.ForeignKey('Staff.StaffId'), nullable=False)
     
     # Relationships
-    diagnoses = db.relationship('VisitDiagnosis', backref='visit', lazy=True)
-    documents = db.relationship('VisitDocuments', backref='visit', lazy=True)
-    images = db.relationship('VisitImage', backref='visit', lazy=True)
-    drugs = db.relationship('VisitDrug', backref='visit', lazy=True)
-    procedures = db.relationship('VisitProc', backref='visit', lazy=True)
-    signs = db.relationship('VisitSign', backref='visit', lazy=True)
-    tests = db.relationship('VisitTest', backref='visit', lazy=True)
+    diagnoses = db.relationship('VisitDiagnosis', backref='visit', lazy=True, cascade='all, delete-orphan')
+    documents = db.relationship('VisitDocuments', backref='visit', lazy=True, cascade='all, delete-orphan')
+    images = db.relationship('VisitImage', backref='visit', lazy=True, cascade='all, delete-orphan')
+    drugs = db.relationship('VisitDrug', backref='visit', lazy=True, cascade='all, delete-orphan')
+    procedures = db.relationship('VisitProc', backref='visit', lazy=True, cascade='all, delete-orphan')
+    signs = db.relationship('VisitSign', backref='visit', lazy=True, cascade='all, delete-orphan')
+    tests = db.relationship('VisitTest', backref='visit', lazy=True, cascade='all, delete-orphan')
+    staff = db.relationship('VisitStaff', backref='visit', lazy=True, cascade='all, delete-orphan')
+    
+    def to_dict(self):
+        """Convert Visit to dictionary for JSON serialization"""
+        return {
+            'VisitId': self.VisitId,
+            'PatientId': self.PatientId,
+            'DepartmentId': self.DepartmentId,
+            'VisitPurpose': self.VisitPurpose,
+            'VisitTime': self.VisitTime.isoformat() if self.VisitTime else None,
+            'StaffId': self.StaffId
+        }
     
     def __repr__(self):
         return f'<Visit {self.VisitId}: {self.PatientId} - {self.VisitPurpose}>'
@@ -286,6 +298,15 @@ class VisitDiagnosis(db.Model):
     ICDCode = db.Column(db.String(10), db.ForeignKey('ICD.ICDCode'), primary_key=True)
     ActualDiagnosis = db.Column(db.String(255))
     DiseaseType = db.Column(db.Enum('Bệnh chính', 'Bệnh kèm', 'Biến chứng', name='disease_type'))
+    
+    def to_dict(self):
+        """Convert VisitDiagnosis to dictionary for JSON serialization"""
+        return {
+            'VisitId': self.VisitId,
+            'ICDCode': self.ICDCode,
+            'ActualDiagnosis': self.ActualDiagnosis,
+            'DiseaseType': self.DiseaseType
+        }
 
 class VisitDocuments(db.Model):
     __tablename__ = 'VisitDocuments'
@@ -317,6 +338,20 @@ class VisitDrug(db.Model):
     Note = db.Column(db.String(100))
     DrugStatus = db.Column(db.Enum('CD', 'TH', 'XONG', name='drug_status'), default='CD')
     IsCustom = db.Column(db.Boolean, default=False)
+    
+    def to_dict(self):
+        """Convert VisitDrug to dictionary for JSON serialization"""
+        return {
+            'VisitId': self.VisitId,
+            'DrugId': self.DrugId,
+            'DrugRoute': self.DrugRoute,
+            'DrugQuantity': self.DrugQuantity,
+            'DrugTimes': self.DrugTimes,
+            'DrugAtTime': self.DrugAtTime.isoformat() if self.DrugAtTime else None,
+            'Note': self.Note,
+            'DrugStatus': self.DrugStatus,
+            'IsCustom': self.IsCustom
+        }
 
 class VisitProc(db.Model):
     __tablename__ = 'VisitProc'
