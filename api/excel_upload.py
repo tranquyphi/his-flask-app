@@ -80,7 +80,7 @@ def get_available_tables():
                 {"name": "DrugContent", "type": "text", "required": False, "description": "Content/strength information"},
                 {"name": "DrugFormulation", "type": "text", "required": False, "description": "Form of the drug (tablet, liquid, etc.)"},
                 {"name": "DrugRemains", "type": "number", "required": False, "description": "Remaining quantity in stock"},
-                {"name": "DrugGroup", "type": "text", "required": False, "description": "Classification group"},
+                {"name": "DrugGroupId", "type": "integer", "required": False, "description": "Drug group ID (integer)"},
                 {"name": "DrugPriceBHYT", "type": "number", "required": False, "description": "Price for insured patients"},
                 {"name": "DrugPriceVP", "type": "number", "required": False, "description": "Price for non-insured patients"}
             ]

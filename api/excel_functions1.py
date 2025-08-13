@@ -37,7 +37,7 @@ def import_drugs(df, db):
             drug_content = row['DrugContent'] if 'DrugContent' in df.columns and not pd.isna(row['DrugContent']) else ''
             drug_formulation = row['DrugFormulation'] if 'DrugFormulation' in df.columns and not pd.isna(row['DrugFormulation']) else ''
             drug_remains = int(row['DrugRemains']) if 'DrugRemains' in df.columns and not pd.isna(row['DrugRemains']) else 0
-            drug_group = row['DrugGroup'] if 'DrugGroup' in df.columns and not pd.isna(row['DrugGroup']) else ''
+            drug_group_id = int(row['DrugGroupId']) if 'DrugGroupId' in df.columns and not pd.isna(row['DrugGroupId']) else None
             drug_price_bhyt = int(row['DrugPriceBHYT']) if 'DrugPriceBHYT' in df.columns and not pd.isna(row['DrugPriceBHYT']) else 0
             drug_price_vp = int(row['DrugPriceVP']) if 'DrugPriceVP' in df.columns and not pd.isna(row['DrugPriceVP']) else 0
             
@@ -53,7 +53,7 @@ def import_drugs(df, db):
                     existing.DrugContent = drug_content
                     existing.DrugFormulation = drug_formulation
                     existing.DrugRemains = drug_remains
-                    existing.DrugGroup = drug_group
+                    existing.DrugGroupId = drug_group_id
                     existing.DrugPriceBHYT = drug_price_bhyt
                     existing.DrugPriceVP = drug_price_vp
                     db.session.commit()  # Commit each row individually
@@ -67,7 +67,7 @@ def import_drugs(df, db):
                         DrugContent=drug_content,
                         DrugFormulation=drug_formulation,
                         DrugRemains=drug_remains,
-                        DrugGroup=drug_group,
+                        DrugGroupId=drug_group_id,
                         DrugPriceBHYT=drug_price_bhyt,
                         DrugPriceVP=drug_price_vp
                     )

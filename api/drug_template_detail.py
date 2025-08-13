@@ -4,12 +4,12 @@ Managing associations between drug templates and drugs
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models import db, DrugTemplate, DrugTemplateDetail, Drug, Department
+from models import db, DrugTemplate, DrugTemplateDetail, Drug, DrugGroup, Department
 
 drug_template_detail_bp = Blueprint('drug_template_detail', __name__)
 
 
-def template_detail_to_dict(detail, drug=None, template_name=None, department_name=None):
+def template_detail_to_dict(detail, drug=None, template_name=None, department_name=None, group_name=None):
     """Convert DrugTemplateDetail to dictionary with full drug information"""
     result = {
         'DrugTemplateId': detail.DrugTemplateId,
@@ -25,7 +25,8 @@ def template_detail_to_dict(detail, drug=None, template_name=None, department_na
             'DrugChemical': drug.DrugChemical,
             'DrugContent': drug.DrugContent,
             'DrugFormulation': drug.DrugFormulation,
-            'DrugGroup': drug.DrugGroup,
+            'DrugGroupId': drug.DrugGroupId,
+            'DrugGroup': group_name,  # Include the group name from the join
             'DrugTherapy': drug.DrugTherapy,
             'DrugRoute': drug.DrugRoute,
             'DrugAvailable': drug.DrugAvailable,
@@ -40,6 +41,7 @@ def template_detail_to_dict(detail, drug=None, template_name=None, department_na
             'DrugChemical': None,
             'DrugContent': None,
             'DrugFormulation': None,
+            'DrugGroupId': None,
             'DrugGroup': None,
             'DrugTherapy': None,
             'DrugRoute': None,
@@ -60,10 +62,13 @@ def list_drug_template_details():
         query = db.session.query(
             DrugTemplateDetail, 
             Drug,
+            DrugGroup.DrugGroupName,
             DrugTemplate.DrugTemplateName,
             Department.DepartmentName
         ).join(
             Drug, DrugTemplateDetail.DrugId == Drug.DrugId, isouter=True
+        ).join(
+            DrugGroup, Drug.DrugGroupId == DrugGroup.DrugGroupId, isouter=True
         ).join(
             DrugTemplate, DrugTemplateDetail.DrugTemplateId == DrugTemplate.DrugTemplateId, isouter=True
         ).join(
@@ -83,8 +88,8 @@ def list_drug_template_details():
 
         records = query.order_by(asc(Drug.DrugName)).all()
         data = [
-            template_detail_to_dict(detail, drug, template_name, dept_name) 
-            for detail, drug, template_name, dept_name in records
+            template_detail_to_dict(detail, drug, template_name, dept_name, group_name) 
+            for detail, drug, group_name, template_name, dept_name in records
         ]
         return jsonify({'drug_template_details': data})
     except Exception as e:
@@ -104,15 +109,23 @@ def get_drug_template_detail(template_id, drug_id):
         drug = Drug.query.get(detail.DrugId) if detail.DrugId else None
         template = DrugTemplate.query.get(detail.DrugTemplateId) if detail.DrugTemplateId else None
         department = None
+        group_name = None
+        
         if template and template.DepartmentId:
             department = Department.query.get(template.DepartmentId)
+        
+        if drug and drug.DrugGroupId:
+            drug_group = DrugGroup.query.get(drug.DrugGroupId)
+            if drug_group:
+                group_name = drug_group.DrugGroupName
         
         return jsonify({
             'drug_template_detail': template_detail_to_dict(
                 detail, 
                 drug,
                 template.DrugTemplateName if template else None,
-                department.DepartmentName if department else None
+                department.DepartmentName if department else None,
+                group_name
             )
         })
     except Exception as e:
@@ -222,24 +235,26 @@ def get_template_drugs(template_id):
             DrugTemplateDetail,
             Drug.DrugName,
             Drug.DrugChemical,
-            Drug.DrugGroup,
+            DrugGroup.DrugGroupName,
             Drug.DrugAvailable,
             Drug.DrugFormulation
         ).join(
             Drug, DrugTemplateDetail.DrugId == Drug.DrugId
+        ).join(
+            DrugGroup, Drug.DrugGroupId == DrugGroup.DrugGroupId, isouter=True
         ).filter(
             DrugTemplateDetail.DrugTemplateId == template_id
         ).order_by(asc(Drug.DrugName))
 
         records = query.all()
         drugs = []
-        for detail, drug_name, chemical_name, drug_group, availability, formulation in records:
+        for detail, drug_name, chemical_name, group_name, availability, formulation in records:
             drugs.append({
                 'DrugTemplateId': detail.DrugTemplateId,
                 'DrugId': detail.DrugId,
                 'DrugName': drug_name,
                 'DrugChemical': chemical_name,
-                'DrugGroup': drug_group,
+                'DrugGroup': group_name,
                 'DrugAvailable': availability,
                 'DrugFormulation': formulation
             })

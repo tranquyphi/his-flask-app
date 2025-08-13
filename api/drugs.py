@@ -4,13 +4,13 @@ CRUD operations for Drug management
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc, text
-from models import db, Drug
+from models import db, Drug, DrugGroup
 
 drugs_bp = Blueprint('drugs', __name__)
 
 
-def drug_to_dict(drug):
-    """Convert Drug to dictionary"""
+def drug_to_dict(drug, group_name=None):
+    """Convert Drug to dictionary with optional group name"""
     return {
         'DrugId': drug.DrugId,
         'DrugName': drug.DrugName,
@@ -18,7 +18,8 @@ def drug_to_dict(drug):
         'DrugContent': drug.DrugContent,
         'DrugFormulation': drug.DrugFormulation,
         'DrugRemains': drug.DrugRemains,
-        'DrugGroup': drug.DrugGroup,
+        'DrugGroupId': drug.DrugGroupId,
+        'DrugGroup': group_name,  # Include the group name
         'DrugTherapy': drug.DrugTherapy,
         'DrugRoute': drug.DrugRoute,
         'DrugQuantity': drug.DrugQuantity,
@@ -36,12 +37,15 @@ def list_drugs():
     """List drugs with optional filters and search.
     Query params:
       q: substring in DrugName or DrugChemical (case-insensitive)
-      group: substring in DrugGroup
+      group: substring in DrugGroupId
       available: 0/1 for DrugAvailable
       formulation: substring in DrugFormulation
     """
     try:
-        query = db.session.query(Drug)
+        # Query with left join to include group names
+        query = db.session.query(Drug, DrugGroup.DrugGroupName).outerjoin(
+            DrugGroup, Drug.DrugGroupId == DrugGroup.DrugGroupId
+        )
 
         q = request.args.get('q', type=str)
         drug_group = request.args.get('group', type=str)
@@ -54,14 +58,14 @@ def list_drugs():
                 (Drug.DrugChemical.ilike(f"%{q}%"))
             )
         if drug_group:
-            query = query.filter(Drug.DrugGroup.ilike(f"%{drug_group}%"))
+            query = query.filter(Drug.DrugGroupId == drug_group)
         if available in ('0', '1'):
             query = query.filter(Drug.DrugAvailable == (available == '1'))
         if formulation:
             query = query.filter(Drug.DrugFormulation.ilike(f"%{formulation}%"))
 
         records = query.order_by(asc(Drug.DrugName)).all()
-        data = [drug_to_dict(drug) for drug in records]
+        data = [drug_to_dict(drug, group_name) for drug, group_name in records]
         return jsonify({'drugs': data})
     except Exception as e:
         db.session.rollback()
@@ -72,8 +76,13 @@ def list_drugs():
 def get_drug(drug_id):
     """Get a specific drug by ID"""
     try:
-        drug = Drug.query.get_or_404(drug_id)
-        return jsonify({'drug': drug_to_dict(drug)})
+        # Query with join to get group name
+        result = db.session.query(Drug, DrugGroup.DrugGroupName).outerjoin(
+            DrugGroup, Drug.DrugGroupId == DrugGroup.DrugGroupId
+        ).filter(Drug.DrugId == drug_id).first_or_404()
+        
+        drug, group_name = result
+        return jsonify({'drug': drug_to_dict(drug, group_name)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -112,7 +121,7 @@ def create_drug():
             DrugContent=payload.get('DrugContent', '').strip() or None,
             DrugFormulation=payload.get('DrugFormulation', '').strip() or None,
             DrugRemains=payload.get('DrugRemains', 0) or 0,
-            DrugGroup=payload.get('DrugGroup', '').strip() or None,
+            DrugGroupId=payload.get('DrugGroupId', None),
             DrugTherapy=payload.get('DrugTherapy', '').strip() or None,
             DrugRoute=payload.get('DrugRoute', '').strip() or None,
             DrugQuantity=payload.get('DrugQuantity', '').strip() or None,
@@ -152,8 +161,8 @@ def update_drug(drug_id):
             drug.DrugFormulation = payload['DrugFormulation'].strip() or None
         if 'DrugRemains' in payload:
             drug.DrugRemains = int(payload['DrugRemains'] or 0)
-        if 'DrugGroup' in payload:
-            drug.DrugGroup = payload['DrugGroup'].strip() or None
+        if 'DrugGroupId' in payload:
+            drug.DrugGroupId = payload['DrugGroupId']
         if 'DrugTherapy' in payload:
             drug.DrugTherapy = payload['DrugTherapy'].strip() or None
         if 'DrugRoute' in payload:

@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request, Blueprint, render_template
 from datetime import datetime
 from models import (
     create_app, db,
-    BodyPart, BodySite, BodySystem, Department, Drug, ICD, Patient, Proc, PatientDepartment,
+    BodyPart, BodySite, BodySystem, Department, Drug, DrugGroup, ICD, Patient, Proc, PatientDepartment,
     Sign, Staff, Template, Test, Visit, VisitDiagnosis, VisitDocuments, VisitImage,
     VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, DrugTemplateDetail, SignTemplate #,PatientsWithDepartment
 )
@@ -16,6 +16,7 @@ from api.sign_template_detail import sign_template_detail_bp
 from api.drugs import drugs_bp
 from api.drug_template import drug_template_bp
 from api.drug_template_detail import drug_template_detail_bp
+from api.drug_groups import drug_groups_bp
 from api.v2_endpoints import v2_bp
 
 config_name = 'development'
@@ -61,6 +62,7 @@ register_model_api(BodySite, 'body_site')
 register_model_api(BodySystem, 'body_system')
 register_model_api(Department, 'department')
 register_model_api(Drug, 'drug')
+register_model_api(DrugGroup, 'drug_group')
 register_model_api(ICD, 'icd')
 register_model_api(Patient, 'patient')
 register_model_api(Proc, 'proc')
@@ -96,6 +98,7 @@ app.register_blueprint(sign_template_detail_bp, url_prefix='/api')
 app.register_blueprint(drugs_bp, url_prefix='/api')
 app.register_blueprint(drug_template_bp, url_prefix='/api')
 app.register_blueprint(drug_template_detail_bp, url_prefix='/api')
+app.register_blueprint(drug_groups_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -138,6 +141,9 @@ def drug_templates_page():
 def drug_template_details_page(template_id):
     return render_template('drug_template_details.html', template_id=template_id)
 
+@app.route('/drug-groups')
+def drug_groups_page():
+    return render_template('drug_groups.html')
 
 @app.route('/tests')
 def tests_page():

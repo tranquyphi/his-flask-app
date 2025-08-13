@@ -96,6 +96,19 @@ class Department(db.Model):
     def __repr__(self):
         return f'<Department {self.DepartmentName}>'
 
+class DrugGroup(db.Model):
+    __tablename__ = 'DrugGroup'
+    
+    DrugGroupId = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    DrugGroupName = db.Column(db.String(100), nullable=False)
+    DrugGroupDescription = db.Column(db.String(255))
+    
+    # Relationships
+    drugs = db.relationship('Drug', backref='drug_group', lazy=True)
+    
+    def __repr__(self):
+        return f'<DrugGroup {self.DrugGroupName}>'
+
 class Drug(db.Model):
     __tablename__ = 'Drug'
     
@@ -105,7 +118,7 @@ class Drug(db.Model):
     DrugContent = db.Column(db.String(100))
     DrugFormulation = db.Column(db.String(50))
     DrugRemains = db.Column(db.SmallInteger)
-    DrugGroup = db.Column(db.String(100))
+    DrugGroupId = db.Column(db.Integer, db.ForeignKey('DrugGroup.DrugGroupId'))
     DrugTherapy = db.Column(db.String(200))
     DrugRoute = db.Column(db.String(50))
     DrugQuantity = db.Column(db.String(50))
