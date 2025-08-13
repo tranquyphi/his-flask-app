@@ -4,7 +4,7 @@ from models import (
     create_app, db,
     BodyPart, BodySite, BodySystem, Department, Drug, ICD, Patient, Proc, PatientDepartment,
     Sign, Staff, Template, Test, Visit, VisitDiagnosis, VisitDocuments, VisitImage,
-    VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, SignTemplate #,PatientsWithDepartment
+    VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, DrugTemplateDetail, SignTemplate #,PatientsWithDepartment
 )
 from api.department_patients import dept_patients_bp
 from api.body_sites import body_sites_bp
@@ -13,6 +13,9 @@ from api.excel_upload import excel_upload_bp
 from api.signs import signs_bp
 from api.sign_template import sign_template_bp
 from api.sign_template_detail import sign_template_detail_bp
+from api.drugs import drugs_bp
+from api.drug_template import drug_template_bp
+from api.drug_template_detail import drug_template_detail_bp
 from api.v2_endpoints import v2_bp
 
 config_name = 'development'
@@ -90,9 +93,21 @@ app.register_blueprint(excel_upload_bp)
 app.register_blueprint(signs_bp, url_prefix='/api')
 app.register_blueprint(sign_template_bp, url_prefix='/api')
 app.register_blueprint(sign_template_detail_bp, url_prefix='/api')
+app.register_blueprint(drugs_bp, url_prefix='/api')
+app.register_blueprint(drug_template_bp, url_prefix='/api')
+app.register_blueprint(drug_template_detail_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
+@app.route('/')
+def index():
+    """Main index page with links to all available pages"""
+    return render_template('index.html')
+
+@app.route('/departments')
+def departments_page():
+    return render_template('departments.html')
+
 @app.route('/department_patients/<int:department_id>')
 def department_patients_specific(department_id):
     """Direct access to a specific department's patients - for authorized staff"""
@@ -109,6 +124,40 @@ def sign_templates_page():
 @app.route('/sign-templates/<int:template_id>/details')
 def sign_template_details_page(template_id):
     return render_template('sign_template_details.html', template_id=template_id)
+
+@app.route('/drugs')
+def drugs_page():
+    return render_template('drugs.html')
+
+@app.route('/drug-templates')
+def drug_templates_page():
+    return render_template('drug_templates.html')
+
+
+@app.route('/drug-templates/<int:template_id>/details')
+def drug_template_details_page(template_id):
+    return render_template('drug_template_details.html', template_id=template_id)
+
+
+@app.route('/tests')
+def tests_page():
+    return render_template('tests.html')
+
+@app.route('/procedures')
+def procedures_page():
+    return render_template('procedures.html')
+
+@app.route('/staff')
+def staff_page():
+    return render_template('staff.html')
+
+@app.route('/body-sites')
+def body_sites_page():
+    return render_template('body_sites.html')
+
+@app.route('/excel-upload')
+def excel_upload_page():
+    return render_template('excel_upload.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

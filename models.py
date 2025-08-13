@@ -361,8 +361,16 @@ class TestTemplate(db.Model):
 class DrugTemplate(db.Model):
     __tablename__ = 'DrugTemplate'
     
-    TemplateId = db.Column(db.SmallInteger, db.ForeignKey('Template.TemplateId'), primary_key=True)
-    DrugId = db.Column(db.String(50), db.ForeignKey('Drug.DrugId'), primary_key=True)
+    DrugTemplateId = db.Column(db.SmallInteger, primary_key=True, autoincrement=True)
+    DrugTemplateName = db.Column(db.String(100))
+    DepartmentId = db.Column(db.SmallInteger, db.ForeignKey('Department.DepartmentId'))
+    DrugTemplateType = db.Column(db.Enum('BA', 'TD', 'PK', 'CC', name='drug_template_type'), default='TD')
+
+class DrugTemplateDetail(db.Model):
+    __tablename__ = 'DrugTemplateDetail'
+    
+    DrugTemplateId = db.Column(db.SmallInteger, db.ForeignKey('DrugTemplate.DrugTemplateId'), primary_key=True)
+    DrugId = db.Column(db.String(20), db.ForeignKey('Drug.DrugId'), primary_key=True)
 
 class SignTemplate(db.Model):
     __tablename__ = 'SignTemplate'

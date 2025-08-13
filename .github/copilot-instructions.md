@@ -35,7 +35,7 @@ class PatientWithDepartment(db.Model):
 
 ## Frontend Architecture
 
-### Tabulator.js Pattern
+### Pattern
 All data tables follow this structure:
 ```javascript
 // Initialize table with API integration
