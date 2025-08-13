@@ -178,6 +178,16 @@ def patient_visits_specific(patient_id):
     """Direct access to a specific patient's visits history"""
     return render_template('patient_visits.html', patient_id=patient_id)
 
+@app.route('/test-patient-visits')
+def test_patient_visits():
+    """Test route for patient visits with fixed test patient ID"""
+    return render_template('patient_visits.html', patient_id="2500073746")
+
+@app.route('/test-patient-static')
+def test_patient_static():
+    """Static test page for patient visits that doesn't rely on JavaScript or API calls"""
+    return render_template('test_patient_visits.html')
+
 @app.route('/excel-upload')
 def excel_upload_page():
     return render_template('excel_upload.html')
