@@ -216,7 +216,7 @@ class Staff(db.Model):
     StaffAvailable = db.Column(db.Boolean, default=True)
     
     # Relationships
-    visits = db.relationship('Visit', backref='staff', lazy=True)
+    visits = db.relationship('Visit', backref='attending_staff', lazy=True)
     
     def __repr__(self):
         return f'<Staff {self.StaffName} - {self.StaffRole}>'
@@ -271,7 +271,7 @@ class Visit(db.Model):
     procedures = db.relationship('VisitProc', backref='visit', lazy=True, cascade='all, delete-orphan')
     signs = db.relationship('VisitSign', backref='visit', lazy=True, cascade='all, delete-orphan')
     tests = db.relationship('VisitTest', backref='visit', lazy=True, cascade='all, delete-orphan')
-    staff = db.relationship('VisitStaff', backref='visit', lazy=True, cascade='all, delete-orphan')
+    visit_staff = db.relationship('VisitStaff', backref='visit', lazy=True, cascade='all, delete-orphan')
     
     def to_dict(self):
         """Convert Visit to dictionary for JSON serialization"""
