@@ -13,7 +13,7 @@
 	<style>
 		.dataTables_wrapper .dataTables_filter{display:none}
 		.template-header {
-			background: linear-gradient(135deg, #28a745, #20c997);
+			background: linear-gradient(135deg, #17a2b8, #138496);
 			color: white;
 			padding: 1.5rem;
 			border-radius: 0.5rem;
@@ -63,92 +63,47 @@
 				<option value="">Dạng bào chế (tất cả)</option>
 			</select>
 		</div>
-		<div class="col-sm-2">
-			<span class="text-muted small">Tổng: <span id="total-drugs" class="fw-bold text-primary">0</span> thuốc</span>
-		</div>
-		<div class="col-sm-1 d-grid">
-			<button id="btn-refresh" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync"></i></button>
+		<div class="col-sm-3 d-grid">
+			<button id="btn-refresh" class="btn btn-sm btn-outline-secondary"><i class="fas fa-sync"></i> Làm mới</button>
 		</div>
 	</div>
 
-	<!-- Template Drugs Table -->
-	<div class="card">
-		<div class="card-header py-2">
-			<h6 class="card-title mb-0"><i class="fas fa-list me-1"></i>Danh sách thuốc trong mẫu</h6>
-		</div>
-		<div class="card-body p-0">
-			<table id="template-drugs-table" class="table table-striped table-hover mb-0" style="width:100%">
-				<thead class="table-light">
-					<tr>
-						<th>ID</th>
-						<th>Tên thuốc</th>
-						<th>Tên hóa học</th>
-						<th>Nhóm</th>
-						<th>Dạng bào chế</th>
-						<th>Tình trạng</th>
-						<th>Thao tác</th>
-					</tr>
-				</thead>
-				<tbody></tbody>
-			</table>
-		</div>
-	</div>
+	<!-- Drugs Table -->
+	<table id="drugs-table" class="table table-striped table-bordered table-sm" style="width:100%">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Tên thuốc</th>
+				<th>Tên hóa học</th>
+				<th>Nhóm</th>
+				<th>Dạng bào chế</th>
+				<th>Tình trạng</th>
+				<th>Thao tác</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
 	
 	<div id="alert-container"></div>
-	<div id="debug-info" class="small text-muted mt-2" style="display:none">(loading...)</div>
+	<div id="drugs-debug" class="small text-muted mt-2" style="display:none">(loading drugs...)</div>
 </div>
 
 <!-- Add Drug Modal -->
-<div class="modal fade" id="addDrugModal" tabindex="-1">
-	<div class="modal-dialog modal-xl">
+<div class="modal fade" id="drugModal" tabindex="-1">
+	<div class="modal-dialog modal-lg">
 		<div class="modal-content">
 			<div class="modal-header py-2">
 				<h5 class="modal-title">Thêm thuốc vào mẫu</h5>
 				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 			</div>
 			<div class="modal-body">
-				<!-- Search/Filter for available drugs -->
-				<div class="row g-2 mb-3">
-					<div class="col-sm-4">
-						<input id="modal-search" class="form-control form-control-sm" placeholder="Tìm thuốc..." />
-					</div>
-					<div class="col-sm-2">
-						<select id="modal-filter-group" class="form-select form-select-sm">
-							<option value="">Nhóm (tất cả)</option>
-						</select>
-					</div>
-					<div class="col-sm-2">
-						<select id="modal-filter-available" class="form-select form-select-sm">
-							<option value="">Tình trạng (tất cả)</option>
-							<option value="true">Có sẵn</option>
-							<option value="false">Hết hàng</option>
-						</select>
-					</div>
-					<div class="col-sm-2">
-						<select id="modal-filter-formulation" class="form-select form-select-sm">
-							<option value="">Dạng (tất cả)</option>
-						</select>
-					</div>
-					<div class="col-sm-2 d-grid">
-						<button id="btn-modal-search" class="btn btn-sm btn-outline-primary">
-							<i class="fas fa-search"></i>
-						</button>
-					</div>
+				<div class="mb-3">
+					<label class="form-label">Tìm thuốc</label>
+					<input id="drug-search" class="form-control" placeholder="Nhập tên thuốc để tìm kiếm..." />
 				</div>
-				
-				<table id="available-drugs-table" class="table table-striped table-sm" style="width:100%">
-					<thead>
-						<tr>
-							<th>Tên thuốc</th>
-							<th>Tên hóa học</th>
-							<th>Nhóm</th>
-							<th>Dạng bào chế</th>
-							<th>Tình trạng</th>
-							<th>Thao tác</th>
-						</tr>
-					</thead>
-					<tbody></tbody>
-				</table>
+				<div id="drug-results" class="border rounded p-2" style="max-height: 400px; overflow-y: auto;">
+					<div class="text-muted text-center py-3">Nhập từ khóa để tìm kiếm thuốc</div>
+				</div>
 			</div>
 			<div class="modal-footer py-2">
 				<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
@@ -161,16 +116,16 @@
 <div class="modal fade" id="removeModal" tabindex="-1">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<div class="modal-header bg-danger text-white py-2">
+			<div class="modal-header py-2">
 				<h5 class="modal-title">Xác nhận xóa</h5>
-				<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+				<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 			</div>
 			<div class="modal-body">
-				<p>Bạn có chắc chắn muốn xóa thuốc <strong id="remove-drug-name"></strong> khỏi mẫu?</p>
+				<p>Bạn có chắc chắn muốn xóa thuốc <strong id="remove-drug-name"></strong> khỏi mẫu này?</p>
 			</div>
 			<div class="modal-footer py-2">
 				<button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Hủy</button>
-				<button type="button" class="btn btn-sm btn-danger" id="btn-confirm-remove">Xóa</button>
+				<button type="button" id="btn-confirm-remove" class="btn btn-sm btn-danger">Xóa</button>
 			</div>
 		</div>
 	</div>
@@ -178,10 +133,6 @@
 
 <script src="/static/js/dataTables.responsive.min.js"></script>
 <script src="/static/js/responsive.bootstrap5.min.js"></script>
-<script>
-	// Pass template ID from Flask template to JavaScript
-	const TEMPLATE_ID = parseInt(window.location.pathname.split('/')[2]);
-</script>
-<script src="/static/js/drug_template_details.js?v=1.5"></script>
+<script src="/static/js/drug_template_details.js"></script>
 </body>
 </html>

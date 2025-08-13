@@ -15,11 +15,13 @@ def drug_to_dict(drug, group_name=None):
         'DrugId': drug.DrugId,
         'DrugName': drug.DrugName,
         'DrugChemical': drug.DrugChemical,
+        'DrugGenericName': drug.DrugChemical,  # Alias for frontend
         'DrugContent': drug.DrugContent,
         'DrugFormulation': drug.DrugFormulation,
         'DrugRemains': drug.DrugRemains,
         'DrugGroupId': drug.DrugGroupId,
-        'DrugGroup': group_name,  # Include the group name
+        'DrugGroup': group_name,  # Keep for backward compatibility
+        'DrugGroupName': group_name,  # Add for frontend consistency
         'DrugTherapy': drug.DrugTherapy,
         'DrugRoute': drug.DrugRoute,
         'DrugQuantity': drug.DrugQuantity,
@@ -48,19 +50,26 @@ def list_drugs():
         )
 
         q = request.args.get('q', type=str)
+        drug_name = request.args.get('drug_name', type=str)  # Frontend parameter
         drug_group = request.args.get('group', type=str)
+        drug_group_id = request.args.get('drug_group_id', type=str)  # Frontend parameter
         available = request.args.get('available', type=str)
         formulation = request.args.get('formulation', type=str)
 
-        if q:
+        # Use frontend parameters if provided, fallback to legacy parameters
+        search_term = drug_name or q
+        group_filter = drug_group_id or drug_group
+
+        if search_term:
             query = query.filter(
-                (Drug.DrugName.ilike(f"%{q}%")) | 
-                (Drug.DrugChemical.ilike(f"%{q}%"))
+                (Drug.DrugName.ilike(f"%{search_term}%")) | 
+                (Drug.DrugChemical.ilike(f"%{search_term}%"))
             )
-        if drug_group:
-            query = query.filter(Drug.DrugGroupId == drug_group)
-        if available in ('0', '1'):
-            query = query.filter(Drug.DrugAvailable == (available == '1'))
+        if group_filter:
+            query = query.filter(Drug.DrugGroupId == group_filter)
+        if available in ('0', '1', 'true', 'false'):
+            is_available = available in ('1', 'true')
+            query = query.filter(Drug.DrugAvailable == is_available)
         if formulation:
             query = query.filter(Drug.DrugFormulation.ilike(f"%{formulation}%"))
 

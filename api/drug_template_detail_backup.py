@@ -173,6 +173,10 @@ def remove_drug_from_template(template_id, drug_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+            'DrugNote': ''
+        })
+    
+    return result
 
 
 @drug_template_detail_bp.route('/drug-template-details', methods=['GET'])
@@ -223,25 +227,32 @@ def get_drug_template_detail(template_id, drug_id):
     """Get a specific drug template detail by composite key"""
     try:
         detail = DrugTemplateDetail.query.filter_by(
-            DrugTemplateId=template_id, DrugId=drug_id
+            DrugTemplateId=template_id, 
+            DrugId=drug_id
         ).first_or_404()
         
         drug = Drug.query.get(detail.DrugId) if detail.DrugId else None
         template = DrugTemplate.query.get(detail.DrugTemplateId) if detail.DrugTemplateId else None
+        department = None
+        group_name = None
         
-        template_name = template.DrugTemplateName if template else None
-        department_name = None
         if template and template.DepartmentId:
             department = Department.query.get(template.DepartmentId)
-            department_name = department.DepartmentName if department else None
         
-        group_name = None
         if drug and drug.DrugGroupId:
             drug_group = DrugGroup.query.get(drug.DrugGroupId)
-            group_name = drug_group.DrugGroupName if drug_group else None
+            if drug_group:
+                group_name = drug_group.DrugGroupName
         
-        data = template_detail_to_dict(detail, drug, template_name, department_name, group_name)
-        return jsonify({'drug_template_detail': data})
+        return jsonify({
+            'drug_template_detail': template_detail_to_dict(
+                detail, 
+                drug,
+                template.DrugTemplateName if template else None,
+                department.DepartmentName if department else None,
+                group_name
+            )
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -256,15 +267,17 @@ def create_drug_template_detail():
         if missing:
             return jsonify({'error': f'Missing required fields: {", ".join(missing)}'}), 400
 
+        # Verify template exists
         template = DrugTemplate.query.get(payload['DrugTemplateId'])
         if not template:
-            return jsonify({'error': 'DrugTemplate not found'}), 404
+            return jsonify({'error': 'Drug template not found'}), 404
 
+        # Verify drug exists
         drug = Drug.query.get(payload['DrugId'])
         if not drug:
             return jsonify({'error': 'Drug not found'}), 404
 
-        # Check if association already exists
+        # Check for duplicate association
         existing = DrugTemplateDetail.query.filter_by(
             DrugTemplateId=payload['DrugTemplateId'],
             DrugId=payload['DrugId']
@@ -272,20 +285,23 @@ def create_drug_template_detail():
         if existing:
             return jsonify({'error': 'Association already exists'}), 409
 
-        detail = DrugTemplateDetail(**{k: v for k, v in payload.items() if k in ['DrugTemplateId', 'DrugId']})
+        detail = DrugTemplateDetail(
+            DrugTemplateId=int(payload['DrugTemplateId']),
+            DrugId=int(payload['DrugId'])
+        )
+        
         db.session.add(detail)
         db.session.commit()
-
-        # Get full data for response
-        department = Department.query.get(template.DepartmentId) if template.DepartmentId else None
-        drug_group = DrugGroup.query.get(drug.DrugGroupId) if drug.DrugGroupId else None
         
-        data = template_detail_to_dict(
-            detail, drug, template.DrugTemplateName, 
-            department.DepartmentName if department else None,
-            drug_group.DrugGroupName if drug_group else None
-        )
-        return jsonify({'drug_template_detail': data}), 201
+        department = Department.query.get(template.DepartmentId) if template.DepartmentId else None
+        return jsonify({
+            'drug_template_detail': template_detail_to_dict(
+                detail, 
+                drug.DrugName,
+                template.DrugTemplateName,
+                department.DepartmentName if department else None
+            )
+        }), 201
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -293,17 +309,21 @@ def create_drug_template_detail():
 
 @drug_template_detail_bp.route('/drug-template-details/<int:template_id>/<drug_id>', methods=['PUT'])
 def update_drug_template_detail(template_id, drug_id):
-    """Update a drug template detail association"""
+    """Update an existing drug template detail association"""
     try:
         detail = DrugTemplateDetail.query.filter_by(
-            DrugTemplateId=template_id, DrugId=drug_id
+            DrugTemplateId=template_id, 
+            DrugId=drug_id
         ).first_or_404()
         
         payload = request.get_json(force=True) or {}
-        # Currently, there's no additional data to update for associations
-        # This endpoint exists for API completeness
+
+        # For composite key tables, updating the key fields means creating a new record
+        # and deleting the old one, which is complex. For now, we'll not allow key updates.
+        # Only allow updating related data if needed in the future.
         
-        return jsonify({'message': 'Drug template detail updated successfully'}), 200
+        return jsonify({'error': 'Updates not supported for composite key associations'}), 400
+        
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
@@ -314,13 +334,63 @@ def delete_drug_template_detail(template_id, drug_id):
     """Delete a drug template detail association"""
     try:
         detail = DrugTemplateDetail.query.filter_by(
-            DrugTemplateId=template_id, DrugId=drug_id
+            DrugTemplateId=template_id, 
+            DrugId=drug_id
         ).first_or_404()
         
         db.session.delete(detail)
         db.session.commit()
-        
-        return jsonify({'message': 'Drug template detail deleted successfully'}), 200
+        return jsonify({
+            'message': 'Association deleted', 
+            'DrugTemplateId': template_id,
+            'DrugId': drug_id
+        })
     except Exception as e:
         db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
+@drug_template_detail_bp.route('/drug-templates/<int:template_id>/drugs', methods=['GET'])
+def get_template_drugs(template_id):
+    """Get all drugs associated with a specific template"""
+    try:
+        template = DrugTemplate.query.get_or_404(template_id)
+        
+        query = db.session.query(
+            DrugTemplateDetail,
+            Drug.DrugName,
+            Drug.DrugChemical,
+            DrugGroup.DrugGroupName,
+            Drug.DrugAvailable,
+            Drug.DrugFormulation
+        ).join(
+            Drug, DrugTemplateDetail.DrugId == Drug.DrugId
+        ).join(
+            DrugGroup, Drug.DrugGroupId == DrugGroup.DrugGroupId, isouter=True
+        ).filter(
+            DrugTemplateDetail.DrugTemplateId == template_id
+        ).order_by(asc(Drug.DrugName))
+
+        records = query.all()
+        drugs = []
+        for detail, drug_name, chemical_name, group_name, availability, formulation in records:
+            drugs.append({
+                'DrugTemplateId': detail.DrugTemplateId,
+                'DrugId': detail.DrugId,
+                'DrugName': drug_name,
+                'DrugChemical': chemical_name,
+                'DrugGroup': group_name,
+                'DrugAvailable': availability,
+                'DrugFormulation': formulation
+            })
+        
+        return jsonify({
+            'template': {
+                'DrugTemplateId': template.DrugTemplateId,
+                'DrugTemplateName': template.DrugTemplateName,
+                'DrugTemplateType': template.DrugTemplateType
+            },
+            'drugs': drugs
+        })
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
