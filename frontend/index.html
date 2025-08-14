@@ -27,6 +27,15 @@
             border-radius: 10px;
             margin-bottom: 20px;
         }
+        .btn-outline-purple {
+            color: #6f42c1;
+            border-color: #6f42c1;
+        }
+        .btn-outline-purple:hover {
+            color: white;
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+        }
     </style>
 </head>
 <body>
@@ -95,6 +104,23 @@
                             <a href="/department_patients/2" class="btn btn-info btn-sm">HSCC</a>
                             <a href="/department_patients/3" class="btn btn-info btn-sm">P.Khám</a>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-4">
+                <div class="card h-100 card-hover">
+                    <div class="card-body text-center">
+                        <div class="text-purple mb-3" style="color: #6f42c1;">
+                            <i class="fas fa-users-medical fa-3x"></i>
+                        </div>
+                        <h5 class="card-title">Danh sách Bệnh nhân</h5>
+                        <p class="card-text text-muted">Xem tất cả bệnh nhân với thông tin khoa hiện tại và lịch sử phân khoa</p>
+                        <a href="/patients-with-departments" class="btn btn-outline-purple" style="color: #6f42c1; border-color: #6f42c1;">
+                            <i class="fas fa-arrow-right me-1"></i> Truy cập
+                        </a>
                     </div>
                 </div>
             </div>

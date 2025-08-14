@@ -4,7 +4,7 @@ from models import (
     create_app, db,
     BodyPart, BodySite, BodySystem, Department, Drug, DrugGroup, ICD, Patient, Proc, PatientDepartment,
     Sign, Staff, Template, Test, Visit, VisitDiagnosis, VisitDocuments, VisitImage,
-    VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, DrugTemplateDetail, SignTemplate #,PatientsWithDepartment
+    VisitDrug, VisitProc, VisitSign, VisitStaff, VisitTest, TestTemplate, DrugTemplate, DrugTemplateDetail, SignTemplate, PatientsWithDepartment
 )
 from api.department_patients import dept_patients_bp
 from api.body_sites import body_sites_bp
@@ -86,7 +86,21 @@ register_model_api(VisitTest, 'visit_test')
 # register_model_api(TestTemplate, 'test_template')
 # register_model_api(DrugTemplate, 'drug_template')
 #register_model_api(SignTemplate, 'sign_template')
-# register_model_api(PatientsWithDepartment, 'patient_with_department')
+
+# Special API route for PatientsWithDepartment (uses custom methods)
+@bp.route("/patients_with_department", methods=['GET'], endpoint="get_all_patients_with_department")
+def get_all_patients_with_department():
+    try:
+        department_id = request.args.get('department_id')
+        if department_id:
+            # Get patients for specific department
+            patients_data = PatientsWithDepartment.get_by_department(department_id)
+        else:
+            # Get all patients with their department information
+            patients_data = PatientsWithDepartment.get_all_with_departments()
+        return jsonify({'patients_with_department': patients_data})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Register the Blueprint with the app (AFTER all routes are defined)
 app.register_blueprint(bp, url_prefix='/api')
@@ -191,6 +205,11 @@ def test_patient_static():
 @app.route('/excel-upload')
 def excel_upload_page():
     return render_template('excel_upload.html')
+
+@app.route('/patients-with-departments')
+def patients_with_departments_page():
+    """Page showing all patients with their department information"""
+    return render_template('patients_with_departments.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

@@ -434,15 +434,108 @@ class SignTemplateDetail(db.Model):
     SignTemplateId = db.Column(db.SmallInteger, db.ForeignKey('SignTemplate.SignTemplateId'), primary_key=True)
     SignId = db.Column(db.SmallInteger, db.ForeignKey('Sign.SignId'), primary_key=True)
 
-# class PatientsWithDepartment(db.Model):
-#     __tablename__ = 'PatientsWithDepartment'
+class PatientsWithDepartment:
+    """
+    Service class that provides patient information with department details
+    Uses relationships to fetch department names instead of IDs
+    Not a direct ORM model to avoid table conflicts
+    """
     
-#     PatientName = db.Column(db.String(50), primary_key=True)
-#     PatientId = db.Column(db.String(10), db.ForeignKey('Patient.PatientId'), nullable=False)
-#     DepartmentName = db.Column(db.String(100), nullable=False)
-#     PatientAge = db.Column(db.String(20))
-#     PatientGender = db.Column(db.Enum('Nam', 'Nữ', 'Khác', name='patient_gender'))
+    @classmethod
+    def get_all_with_departments(cls):
+        """Get all patients with their department information, sorted by name"""
+        try:
+            patients = Patient.query.order_by(Patient.PatientName).all()
+            result = []
+            
+            for patient in patients:
+                # Get the most recent department assignment
+                latest_assignment = PatientDepartment.query.filter_by(
+                    PatientId=patient.PatientId
+                ).order_by(PatientDepartment.At.desc()).first()
+                
+                current_department = None
+                if latest_assignment:
+                    department = Department.query.get(latest_assignment.DepartmentId)
+                    current_department = department.DepartmentName if department else None
+                
+                # Get all department assignments
+                all_assignments = PatientDepartment.query.filter_by(
+                    PatientId=patient.PatientId
+                ).order_by(PatientDepartment.At.desc()).all()
+                
+                all_departments = []
+                for assignment in all_assignments:
+                    department = Department.query.get(assignment.DepartmentId)
+                    all_departments.append({
+                        'DepartmentName': department.DepartmentName if department else 'Unknown',
+                        'AssignedDate': assignment.At.strftime('%Y-%m-%d %H:%M:%S') if assignment.At else None
+                    })
+                
+                patient_data = {
+                    'PatientId': patient.PatientId,
+                    'PatientName': patient.PatientName,
+                    'PatientAge': patient.PatientAge,
+                    'PatientGender': patient.PatientGender,
+                    'PatientAddress': patient.PatientAddress,
+                    'Allergy': patient.Allergy,
+                    'History': patient.History,
+                    'PatientNote': patient.PatientNote,
+                    'CurrentDepartment': current_department,
+                    'AllDepartments': all_departments
+                }
+                result.append(patient_data)
+            
+            return result
+        except Exception as e:
+            print(f"Error in get_all_with_departments: {e}")
+            return []
     
+    @classmethod
+    def get_by_department(cls, department_id):
+        """Get patients in a specific department"""
+        try:
+            # Get patient IDs that are assigned to this department
+            patient_assignments = PatientDepartment.query.filter_by(DepartmentId=department_id).all()
+            patient_ids = [assignment.PatientId for assignment in patient_assignments]
+            
+            if not patient_ids:
+                return []
+            
+            # Get patients with these IDs
+            patients = Patient.query.filter(Patient.PatientId.in_(patient_ids)).order_by(Patient.PatientName).all()
+            result = []
+            
+            for patient in patients:
+                # Get department info
+                department = Department.query.get(department_id)
+                department_name = department.DepartmentName if department else 'Unknown'
+                
+                # Get assignment date for this department
+                assignment = PatientDepartment.query.filter_by(
+                    PatientId=patient.PatientId,
+                    DepartmentId=department_id
+                ).order_by(PatientDepartment.At.desc()).first()
+                
+                patient_data = {
+                    'PatientId': patient.PatientId,
+                    'PatientName': patient.PatientName,
+                    'PatientAge': patient.PatientAge,
+                    'PatientGender': patient.PatientGender,
+                    'PatientAddress': patient.PatientAddress,
+                    'Allergy': patient.Allergy,
+                    'History': patient.History,
+                    'PatientNote': patient.PatientNote,
+                    'CurrentDepartment': department_name,
+                    'AssignedDate': assignment.At.strftime('%Y-%m-%d %H:%M:%S') if assignment and assignment.At else None
+                }
+                result.append(patient_data)
+            
+            return result
+        except Exception as e:
+            print(f"Error in get_by_department: {e}")
+            return []
+
 
 # ===========================================
 # Database helper functions
