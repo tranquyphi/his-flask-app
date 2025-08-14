@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <title>Visits Management - HIS</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="/static/css/fontawesome.all.min.css" />
+    <link rel="stylesheet" href="/static/css/his.css" />
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/jquery.dataTables.min.js"></script>
+    <script src="/static/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        .dataTables_wrapper .dataTables_filter{display:none}
+    </style>
+</head>
+<body class="p-3">
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fas fa-calendar-check me-2"></i>Visits Management</h2>
+        <button type="button" class="btn btn-primary" id="addVisitBtn">
+            <i class="fas fa-plus"></i> Add New Visit
+        </button>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <input type="text" class="form-control" id="searchVisits" placeholder="Search visits...">
+        </div>
+        <div class="col-md-6 text-end">
+            <button class="btn btn-outline-primary" id="refreshVisits">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover" id="visitsTable">
+            <thead class="table-dark">
+                <tr>
+                    <th>Visit ID</th>
+                    <th>Patient ID</th>
+                    <th>Patient Name</th>
+                    <th>Visit Date</th>
+                    <th>Department</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data loaded via JavaScript -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    const table = $('#visitsTable').DataTable({
+        "responsive": true,
+        "processing": true,
+        "serverSide": false,
+        "ajax": {
+            "url": "/api/visits",
+            "type": "GET",
+            "dataSrc": "visits"
+        },
+        "columns": [
+            { "data": "VisitId" },
+            { "data": "PatientId" },
+            { "data": "PatientName" },
+            { "data": "VisitDate", "render": function(data) {
+                return data ? new Date(data).toLocaleDateString('vi-VN') : '';
+            }},
+            { "data": "DepartmentName" },
+            { "data": "Status" },
+            {
+                "data": null,
+                "orderable": false,
+                "render": function(data, type, row) {
+                    return `
+                        <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${row.VisitId}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${row.VisitId}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `;
+                }
+            }
+        ],
+        "language": {
+            "url": "/static/js/dataTables.vietnamese.json"
+        }
+    });
+
+    // Search functionality
+    $('#searchVisits').on('keyup', function() {
+        table.search(this.value).draw();
+    });
+
+    // Refresh button
+    $('#refreshVisits').on('click', function() {
+        table.ajax.reload();
+    });
+
+    // Add visit button
+    $('#addVisitBtn').on('click', function() {
+        // TODO: Implement add visit modal
+        alert('Add visit functionality to be implemented');
+    });
+
+    // Edit button click
+    $('#visitsTable tbody').on('click', '.edit-btn', function() {
+        const visitId = $(this).data('id');
+        // TODO: Implement edit visit modal
+        alert('Edit visit functionality to be implemented for ID: ' + visitId);
+    });
+
+    // Delete button click
+    $('#visitsTable tbody').on('click', '.delete-btn', function() {
+        const visitId = $(this).data('id');
+        if (confirm('Are you sure you want to delete this visit?')) {
+            // TODO: Implement delete functionality
+            alert('Delete visit functionality to be implemented for ID: ' + visitId);
+        }
+    });
+});
+</script>
+
+</body>
+</html>

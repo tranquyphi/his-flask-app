@@ -8,7 +8,7 @@ This is a **Flask-based Hospital Information System** with MariaDB backend, usin
 - **`models.py`**: Central ORM models + database views as ORM classes (e.g., `PatientWithDepartment`)
 - **`his.py`**: Main Flask app with both API routes (`/api/*`) and UI routes (`/patients`, `/dashboard`)
 - **`config.py`**: Environment-aware configuration (development/production/testing)
-- **`templates/`**: Jinja2 templates with `base.html` providing Bootstrap navigation
+- **`frontend/`**: The UI html pages
 - **`static/js/`**: Frontend logic using Tabulator.js for data tables with CRUD operations
 - **`schema/`**: Database schemas and views DDL
 - **`authorization_audit/`**: Complete authorization framework (future implementation)
@@ -35,26 +35,9 @@ class PatientWithDepartment(db.Model):
 
 ## Frontend Architecture
 
-### Pattern
-All data tables follow this structure:
-```javascript
-// Initialize table with API integration
-let table = new Tabulator("#table-id", {
-    ajaxURL: HIS.apiUrl + "/patients",
-    ajaxResponse: function(url, params, response) {
-        return response.patients || [];  // Extract data array
-    },
-    columns: [
-        // Always include Actions column with CRUD buttons
-        {title: "Actions", formatter: function(cell) {
-            return `<button onclick="edit${Entity}(${id})">...</button>`;
-        }}
-    ]
-});
-```
 
 ### UI File Organization (Strict Convention)
-- HTML templates: `/templates/` (Jinja2)
+- HTML templates: `/frontend/`
 - CSS files: `/static/css/`
 - JS files: `/static/js/`
 - Icons: `/static/icons/`
@@ -69,6 +52,7 @@ sudo systemctl daemon-reload
 sudo systemctl restart his.service
 sudo systemctl status his.service
 
+The port: 8000 (not 5000)
 # View logs
 journalctl -xeu his.service
 ```
@@ -89,8 +73,8 @@ with app.app_context():
 2. Create view model (if joins needed) following `PatientWithDepartment` pattern
 3. Add API routes in `his.py` (`/api/entity` for GET/POST/PUT/DELETE)
 4. Add UI route (`/entity`)
-5. Create template in `templates/entity.html`
-6. Create JavaScript in `static/js/entity.js` following Tabulator pattern
+5. Create template in `frontend/entity.html`
+6. Create JavaScript in `static/js/entity.js` 
 
 ## Critical Conventions
 
@@ -124,14 +108,10 @@ def get_entities():
 ```
 
 ## Front-end Expectations
+Use icons instead of text for action buttons.
 
-Status tracking in `.vscode/prompts/front-end-expectation.md`:
-- ✅ Patients: DONE (full CRUD with department display)
 
-- 🚧 Visits: In progress
-- ⏳ Staff, Departments, Drugs, Tests, Procedures: Planned
-
-### Tabulator Integration Requirements
+### DataTables Integration Requirements
 - Download CSS/JS files locally to `/static/`
 - All tables must show related entity names (not IDs)
 - Action buttons as small icons for each row
