@@ -1,251 +1,366 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Visit History | HIS</title>
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <!-- Tabulator -->
-    <link href="/static/tabulator/css/tabulator.min.css" rel="stylesheet">
-    <script src="/static/tabulator/js/tabulator.min.js"></script>
-    <!-- Custom CSS -->
+    <title>Patient Visits - HIS</title>
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="/static/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="/static/css/fontawesome.all.min.css" />
+    <link rel="stylesheet" href="/static/css/his.css" />
+    <script src="/static/js/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/jquery.dataTables.min.js"></script>
+    <script src="/static/js/dataTables.bootstrap5.min.js"></script>
+    <script src="/static/js/chart.min.js"></script>
     <style>
-        .patient-info {
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            padding: 15px;
+        .patient-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .stat-card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
             margin-bottom: 20px;
         }
-        .tab-content {
-            padding: 20px 0;
+        .stat-card:hover {
+            transform: translateY(-5px);
         }
-        .visit-stats-card {
+        .stat-icon {
+            font-size: 2.5rem;
+            opacity: 0.8;
+        }
+        .visit-card {
+            border-left: 4px solid #007bff;
             margin-bottom: 15px;
+            transition: all 0.3s ease;
         }
-        .card-icon {
-            font-size: 2rem;
-            margin-bottom: 10px;
+        .visit-card:hover {
+            border-left-color: #28a745;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
-        .nav-pills .nav-link.active {
-            background-color: #0d6efd;
+        .diagnosis-badge {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            padding: 5px 12px;
+            margin: 2px;
+            display: inline-block;
+            font-size: 0.875rem;
         }
-        .tab-pane {
-            padding-top: 15px;
+        .timeline {
+            position: relative;
+            padding: 0;
+            list-style: none;
         }
-        /* Navbar styling */
-        .navbar-brand {
-            font-weight: bold;
+        .timeline:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50px;
+            width: 2px;
+            background-color: #e9ecef;
         }
-        .main-wrapper {
+        .timeline-item {
+            position: relative;
+            margin-bottom: 20px;
+            padding-left: 80px;
+        }
+        .timeline-icon {
+            position: absolute;
+            left: 38px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
             display: flex;
-            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
         }
-        .sidebar {
-            width: 250px;
-            background-color: #343a40;
-            color: white;
-            padding-top: 1rem;
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 20px;
         }
-        .content {
-            flex: 1;
-            padding: 20px;
-            background-color: #f5f5f5;
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
         }
-        .nav-link {
-            color: rgba(255,255,255,.75);
-            padding: .5rem 1rem;
-            border-radius: .25rem;
-            margin-bottom: .25rem;
-        }
-        .nav-link:hover {
-            color: white;
-            background-color: rgba(255,255,255,.1);
-        }
-        .nav-link.active {
-            color: white;
-            background-color: #007bff;
-        }
-        .nav-link i {
-            width: 20px;
+        .empty-state {
             text-align: center;
-            margin-right: 10px;
+            padding: 60px 20px;
+            color: #6c757d;
         }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        .btn-action {
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        .visit-purpose-badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+        }
+        .department-badge {
+            background-color: #e7f3ff;
+            color: #0066cc;
+            border-radius: 15px;
+            padding: 3px 10px;
+            font-size: 0.8rem;
+        }
+        .staff-info {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        .dataTables_wrapper .dataTables_filter { display: none; }
     </style>
-
-<body>
-    <!-- Main Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">
-                <i class="fas fa-hospital-alt me-2"></i>HIS
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/"><i class="fas fa-home me-1"></i> Home</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/departments"><i class="fas fa-building me-1"></i> Departments</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link active" href="/patient-visits"><i class="fas fa-clipboard-list me-1"></i> Patient Visits</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/drugs"><i class="fas fa-pills me-1"></i> Drugs</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/staff"><i class="fas fa-user-md me-1"></i> Staff</a>
-                    </li>
-                </ul>
+</head>
+<body class="p-3">
+    <div class="container-fluid">
+        <!-- Patient Header -->
+        <div class="patient-header" id="patientHeader">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-circle me-3" style="font-size: 3rem;"></i>
+                        <div>
+                            <h2 class="mb-1" id="patientName">Loading...</h2>
+                            <div class="row">
+                                <div class="col-auto">
+                                    <span class="badge bg-light text-dark me-2">
+                                        <i class="fas fa-id-card me-1"></i>
+                                        <span id="patientId">-</span>
+                                    </span>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="badge bg-light text-dark me-2">
+                                        <i class="fas fa-venus-mars me-1"></i>
+                                        <span id="patientGender">-</span>
+                                    </span>
+                                </div>
+                                <div class="col-auto">
+                                    <span class="badge bg-light text-dark me-2">
+                                        <i class="fas fa-birthday-cake me-1"></i>
+                                        <span id="patientAge">-</span> tuổi
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-light btn-lg" id="backBtn" onclick="history.back()">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại
+                    </button>
+                </div>
             </div>
         </div>
-    </nav>
 
-    <!-- Main Content -->
-    <div class="container-fluid pt-3">
-        <h2><i class="bi bi-clipboard-pulse"></i> Patient Visit History</h2>
-        
-        <div class="row mt-3">
-            <div class="col-md-12">
-                <!-- Patient Selection -->
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h5>Select Patient</h5>
-                    </div>
+        <!-- Statistics Cards -->
+        <div class="row mb-4" id="statsCards">
+            <div class="col-md-3">
+                <div class="card stat-card bg-primary text-white">
                     <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <div class="input-group">
-                                    <input type="text" id="patient-search" class="form-control" placeholder="Search patient by ID or name...">
-                                    <button class="btn btn-primary" id="search-btn">
-                                        <i class="bi bi-search"></i> Search
-                                    </button>
-                                </div>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="totalVisits">-</h4>
+                                <p class="card-text">Tổng lượt khám</p>
                             </div>
-                            <div class="col-md-4">
-                                <div class="d-flex justify-content-end">
-                                    <button class="btn btn-success" id="create-visit-btn">
-                                        <i class="bi bi-plus-circle"></i> New Visit
-                                    </button>
-                                </div>
+                            <i class="fas fa-calendar-check stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="uniqueDepartments">-</h4>
+                                <p class="card-text">Khoa điều trị</p>
                             </div>
+                            <i class="fas fa-hospital stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="firstVisitDate">-</h4>
+                                <p class="card-text">Lần khám đầu</p>
+                            </div>
+                            <i class="fas fa-clock stat-icon"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="card-title" id="latestVisitDate">-</h4>
+                                <p class="card-text">Lần khám gần nhất</p>
+                            </div>
+                            <i class="fas fa-history stat-icon"></i>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Patient Information (Initially hidden) -->
-        <div class="row mt-3 d-none" id="patient-info-container">
-            <div class="col-md-12">
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0"><i class="bi bi-person-badge"></i> Patient Information</h5>
-                            <span id="total-visits-badge" class="badge bg-light text-dark">0 visits</span>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <p><strong>ID:</strong> <span id="patient-id"></span></p>
+        <!-- Navigation Tabs -->
+        <ul class="nav nav-tabs mb-4" id="visitTabs">
+            <li class="nav-item">
+                <a class="nav-link active" id="timeline-tab" data-bs-toggle="tab" href="#timeline">
+                    <i class="fas fa-timeline me-2"></i>Timeline
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="table-tab" data-bs-toggle="tab" href="#table">
+                    <i class="fas fa-table me-2"></i>Danh sách chi tiết
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="stats-tab" data-bs-toggle="tab" href="#stats">
+                    <i class="fas fa-chart-pie me-2"></i>Thống kê
+                </a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Timeline Tab -->
+            <div class="tab-pane fade show active" id="timeline">
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-timeline me-2"></i>Timeline khám bệnh
+                                    </h5>
+                                    <button class="btn btn-primary btn-sm" id="addVisitBtn">
+                                        <i class="fas fa-plus me-1"></i>Thêm lượt khám
+                                    </button>
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <p><strong>Name:</strong> <span id="patient-name"></span></p>
-                            </div>
-                            <div class="col-md-3">
-                                <p><strong>Gender:</strong> <span id="patient-gender"></span></p>
-                            </div>
-                            <div class="col-md-3">
-                                <p><strong>Age:</strong> <span id="patient-age"></span></p>
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Address:</strong> <span id="patient-address"></span></p>
-                            </div>
-                            <div class="col-md-3">
-                                <p><strong>First Visit:</strong> <span id="first-visit-date"></span></p>
-                            </div>
-                            <div class="col-md-3">
-                                <p><strong>Latest Visit:</strong> <span id="latest-visit-date"></span></p>
+                            <div class="card-body">
+                                <div id="timelineContainer">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Đang tải...</span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <!-- Visit Data Tabs (Initially hidden) -->
-        <div class="row mt-3 d-none" id="visit-data-container">
-            <div class="col-md-12">
+            <!-- Table Tab -->
+            <div class="tab-pane fade" id="table">
                 <div class="card">
                     <div class="card-header">
-                        <ul class="nav nav-tabs card-header-tabs" id="visit-tabs" role="tablist">
-                            <li class="nav-item">
-                                <a class="nav-link active" id="visits-tab" data-bs-toggle="tab" href="#visits" role="tab">
-                                    <i class="bi bi-calendar-check"></i> Visit History
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" id="summary-tab" data-bs-toggle="tab" href="#summary" role="tab">
-                                    <i class="bi bi-graph-up"></i> Visit Summary
-                                </a>
-                            </li>
-                        </ul>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-table me-2"></i>Danh sách lượt khám
+                                </h5>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="searchVisits" placeholder="Tìm kiếm...">
+                                    <button class="btn btn-outline-secondary" id="refreshBtn">
+                                        <i class="fas fa-sync-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="tab-content" id="visit-tabs-content">
-                            <!-- Visit History Tab -->
-                            <div class="tab-pane fade show active" id="visits" role="tabpanel">
-                                <div id="visits-table"></div>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="visitsTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Ngày khám</th>
+                                        <th>Khoa</th>
+                                        <th>Bác sĩ</th>
+                                        <th>Mục đích</th>
+                                        <th>Chẩn đoán</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data loaded via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Tab -->
+            <div class="tab-pane fade" id="stats">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-hospital me-2"></i>Thống kê theo khoa
+                                </h5>
                             </div>
-                            
-                            <!-- Visit Summary Tab -->
-                            <div class="tab-pane fade" id="summary" role="tabpanel">
-                                <div class="row">
-                                    <!-- Department Visits -->
-                                    <div class="col-md-6">
-                                        <div class="card visit-stats-card">
-                                            <div class="card-header">
-                                                <h5><i class="bi bi-building"></i> Visits by Department</h5>
-                                            </div>
-                                            <div class="card-body">
-                                                <div id="department-visits"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Purpose Visits -->
-                                    <div class="col-md-6">
-                                        <div class="card visit-stats-card">
-                                            <div class="card-header">
-                                                <h5><i class="bi bi-bookmark"></i> Visits by Purpose</h5>
-                                            </div>
-                                            <div class="card-body">
-                                                <div id="purpose-visits"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Common Diagnoses -->
-                                    <div class="col-md-12">
-                                        <div class="card visit-stats-card">
-                                            <div class="card-header">
-                                                <h5><i class="bi bi-clipboard-check"></i> Common Diagnoses</h5>
-                                            </div>
-                                            <div class="card-body">
-                                                <div id="common-diagnoses"></div>
-                                            </div>
-                                        </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="departmentChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-clipboard-list me-2"></i>Thống kê theo mục đích
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="purposeChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-diagnoses me-2"></i>Chẩn đoán thường gặp
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="commonDiagnoses">
+                                    <div class="loading-spinner">
+                                        <div class="spinner-border text-primary" role="status"></div>
                                     </div>
                                 </div>
                             </div>
@@ -256,73 +371,560 @@
         </div>
     </div>
 
-    <!-- Create Visit Modal -->
-    <div class="modal fade" id="create-visit-modal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+    <!-- Add Visit Modal -->
+    <div class="modal fade" id="addVisitModal" tabindex="-1">
+        <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title"><i class="bi bi-plus-circle"></i> Create New Visit</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>Thêm lượt khám mới
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body">
-                    <form id="create-visit-form">
+                <form id="addVisitForm">
+                    <div class="modal-body">
                         <div class="mb-3">
-                            <label for="patient-select" class="form-label">Patient</label>
-                            <select id="patient-select" class="form-select" required>
-                                <option value="">Select Patient</option>
+                            <label for="visitDepartment" class="form-label">Khoa điều trị *</label>
+                            <select class="form-select" id="visitDepartment" required>
+                                <option value="">Chọn khoa...</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="department-select" class="form-label">Department</label>
-                            <select id="department-select" class="form-select" required>
-                                <option value="">Select Department</option>
+                            <label for="visitStaff" class="form-label">Bác sĩ *</label>
+                            <select class="form-select" id="visitStaff" required>
+                                <option value="">Chọn bác sĩ...</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="staff-select" class="form-label">Attending Staff</label>
-                            <select id="staff-select" class="form-select" required>
-                                <option value="">Select Staff</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label for="purpose-select" class="form-label">Visit Purpose</label>
-                            <select id="purpose-select" class="form-select" required>
-                                <option value="">Select Purpose</option>
+                            <label for="visitPurpose" class="form-label">Mục đích khám *</label>
+                            <select class="form-select" id="visitPurpose" required>
+                                <option value="">Chọn mục đích...</option>
                                 <option value="Thường quy">Thường quy</option>
                                 <option value="Cấp cứu">Cấp cứu</option>
                                 <option value="Phòng khám">Phòng khám</option>
                                 <option value="Nhận bệnh">Nhận bệnh</option>
-                                <option value="Bệnh án">Bệnh án</option>
-                                <option value="Đột xuất">Đột xuất</option>
-                                <option value="Hội chẩn">Hội chẩn</option>
-                                <option value="Xuất viện">Xuất viện</option>
                                 <option value="Tái khám">Tái khám</option>
                                 <option value="Khám chuyên khoa">Khám chuyên khoa</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="diagnosis-input" class="form-label">Initial Diagnosis</label>
-                            <input type="text" class="form-control" id="diagnosis-input" placeholder="Enter initial diagnosis">
+                            <label for="visitDiagnosis" class="form-label">Chẩn đoán</label>
+                            <textarea class="form-control" id="visitDiagnosis" rows="3" placeholder="Nhập chẩn đoán (nếu có)"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="icd-input" class="form-label">ICD Code</label>
-                            <input type="text" class="form-control" id="icd-input" placeholder="Enter ICD code (optional)">
+                            <label for="visitICDCode" class="form-label">Mã ICD</label>
+                            <input type="text" class="form-control" id="visitICDCode" placeholder="Mã ICD (nếu có)">
                         </div>
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="save-visit-btn">Save Visit</button>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Lưu lượt khám
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap 5 JS Bundle with Popper -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Patient Visits JS -->
-    <script src="/static/js/patient_visits.js"></script>
+    <script>
+        let currentPatientId = null;
+        let visitsData = [];
+        let summaryData = null;
+        let visitsTable = null;
+
+        $(document).ready(function() {
+            // Get patient ID from URL or default
+            const urlPath = window.location.pathname;
+            const pathSegments = urlPath.split('/');
+            currentPatientId = pathSegments[pathSegments.length - 1] || '2500073657';
+            
+            // Initialize
+            initializePage();
+            loadPatientVisits();
+            loadSummaryData();
+            setupEventHandlers();
+        });
+
+        function initializePage() {
+            // Initialize DataTable
+            visitsTable = $('#visitsTable').DataTable({
+                responsive: true,
+                processing: true,
+                serverSide: false,
+                data: [],
+                columns: [
+                    { 
+                        data: null,
+                        render: function(data, type, row, meta) {
+                            return meta.row + 1;
+                        }
+                    },
+                    { 
+                        data: 'VisitTime',
+                        render: function(data) {
+                            if (!data) return '<span class="text-muted">Chưa có</span>';
+                            return new Date(data).toLocaleDateString('vi-VN');
+                        }
+                    },
+                    { 
+                        data: 'DepartmentName',
+                        render: function(data) {
+                            return `<span class="department-badge">${data || 'N/A'}</span>`;
+                        }
+                    },
+                    { 
+                        data: 'StaffName',
+                        render: function(data, type, row) {
+                            return `<div>
+                                <strong>${data || 'N/A'}</strong><br>
+                                <small class="staff-info">${row.StaffRole || ''}</small>
+                            </div>`;
+                        }
+                    },
+                    { 
+                        data: 'VisitPurpose',
+                        render: function(data) {
+                            const colors = {
+                                'Thường quy': 'primary',
+                                'Cấp cứu': 'danger', 
+                                'Phòng khám': 'info',
+                                'Tái khám': 'success'
+                            };
+                            const color = colors[data] || 'secondary';
+                            return `<span class="badge bg-${color} visit-purpose-badge">${data || 'N/A'}</span>`;
+                        }
+                    },
+                    { 
+                        data: 'diagnoses',
+                        render: function(data) {
+                            if (!data || data.length === 0) {
+                                return '<span class="text-muted">Chưa có chẩn đoán</span>';
+                            }
+                            let html = '';
+                            data.forEach(diag => {
+                                if (diag.ActualDiagnosis) {
+                                    html += `<span class="diagnosis-badge">${diag.ActualDiagnosis}</span>`;
+                                }
+                            });
+                            return html || '<span class="text-muted">Chưa có chẩn đoán</span>';
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function(data, type, row) {
+                            return `
+                                <button class="btn btn-sm btn-outline-primary btn-action view-btn" data-id="${row.VisitId}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning btn-action edit-btn" data-id="${row.VisitId}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger btn-action delete-btn" data-id="${row.VisitId}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            `;
+                        }
+                    }
+                ],
+                language: {
+                    url: '/static/js/dataTables.vietnamese.json',
+                    emptyTable: "Chưa có lượt khám nào"
+                },
+                order: [[1, 'desc']]
+            });
+        }
+
+        function setupEventHandlers() {
+            // Search functionality
+            $('#searchVisits').on('keyup', function() {
+                visitsTable.search(this.value).draw();
+            });
+
+            // Refresh button
+            $('#refreshBtn').on('click', function() {
+                loadPatientVisits();
+                loadSummaryData();
+            });
+
+            // Add visit modal
+            $('#addVisitBtn').on('click', function() {
+                loadDepartments();
+                $('#addVisitModal').modal('show');
+            });
+
+            // Department change in modal
+            $('#visitDepartment').on('change', function() {
+                loadStaffByDepartment($(this).val());
+            });
+
+            // Add visit form submission
+            $('#addVisitForm').on('submit', function(e) {
+                e.preventDefault();
+                createVisit();
+            });
+
+            // Table action buttons
+            $('#visitsTable tbody').on('click', '.view-btn', function() {
+                const visitId = $(this).data('id');
+                viewVisit(visitId);
+            });
+
+            $('#visitsTable tbody').on('click', '.edit-btn', function() {
+                const visitId = $(this).data('id');
+                editVisit(visitId);
+            });
+
+            $('#visitsTable tbody').on('click', '.delete-btn', function() {
+                const visitId = $(this).data('id');
+                deleteVisit(visitId);
+            });
+        }
+
+        function loadPatientVisits() {
+            $.ajax({
+                url: `/api/patient_visits/${currentPatientId}`,
+                method: 'GET',
+                success: function(response) {
+                    visitsData = response.visits || [];
+                    updatePatientHeader(response.patient);
+                    updateVisitsTable();
+                    createTimeline();
+                },
+                error: function(xhr) {
+                    console.error('Error loading patient visits:', xhr);
+                    showError('Không thể tải danh sách lượt khám');
+                }
+            });
+        }
+
+        function loadSummaryData() {
+            $.ajax({
+                url: `/api/patient_visits/${currentPatientId}/summary`,
+                method: 'GET',
+                success: function(response) {
+                    summaryData = response;
+                    updateStatistics();
+                    createCharts();
+                    updateCommonDiagnoses();
+                },
+                error: function(xhr) {
+                    console.error('Error loading summary:', xhr);
+                }
+            });
+        }
+
+        function updatePatientHeader(patient) {
+            if (patient) {
+                $('#patientName').text(patient.PatientName || 'N/A');
+                $('#patientId').text(patient.PatientId || 'N/A');
+                $('#patientGender').text(patient.PatientGender || 'N/A');
+                $('#patientAge').text(patient.PatientAge || 'N/A');
+            }
+        }
+
+        function updateStatistics() {
+            if (summaryData) {
+                $('#totalVisits').text(summaryData.visit_summary.total_visits || 0);
+                $('#uniqueDepartments').text(summaryData.department_visits.length || 0);
+                
+                const firstVisit = summaryData.visit_summary.first_visit;
+                if (firstVisit.time) {
+                    $('#firstVisitDate').text(new Date(firstVisit.time).toLocaleDateString('vi-VN'));
+                } else {
+                    $('#firstVisitDate').text('N/A');
+                }
+
+                const latestVisit = summaryData.visit_summary.latest_visit;
+                if (latestVisit.time) {
+                    $('#latestVisitDate').text(new Date(latestVisit.time).toLocaleDateString('vi-VN'));
+                } else {
+                    $('#latestVisitDate').text('N/A');
+                }
+            }
+        }
+
+        function updateVisitsTable() {
+            visitsTable.clear().rows.add(visitsData).draw();
+        }
+
+        function createTimeline() {
+            const container = $('#timelineContainer');
+            
+            if (!visitsData || visitsData.length === 0) {
+                container.html(`
+                    <div class="empty-state">
+                        <i class="fas fa-calendar-times"></i>
+                        <h5>Chưa có lượt khám nào</h5>
+                        <p>Bệnh nhân này chưa có lịch sử khám bệnh.</p>
+                        <button class="btn btn-primary" id="addFirstVisitBtn">
+                            <i class="fas fa-plus me-2"></i>Thêm lượt khám đầu tiên
+                        </button>
+                    </div>
+                `);
+                $('#addFirstVisitBtn').on('click', function() {
+                    $('#addVisitBtn').click();
+                });
+                return;
+            }
+
+            let timelineHtml = '<ul class="timeline">';
+            
+            visitsData.forEach((visit, index) => {
+                const visitDate = visit.VisitTime ? new Date(visit.VisitTime).toLocaleDateString('vi-VN') : 'Chưa xác định';
+                const visitTime = visit.VisitTime ? new Date(visit.VisitTime).toLocaleTimeString('vi-VN') : '';
+                
+                let diagnosesHtml = '';
+                if (visit.diagnoses && visit.diagnoses.length > 0) {
+                    visit.diagnoses.forEach(diag => {
+                        if (diag.ActualDiagnosis) {
+                            diagnosesHtml += `<span class="diagnosis-badge">${diag.ActualDiagnosis}</span>`;
+                        }
+                    });
+                }
+
+                const iconColor = index === 0 ? 'bg-success' : 'bg-primary';
+                
+                timelineHtml += `
+                    <li class="timeline-item">
+                        <div class="timeline-icon ${iconColor} text-white">
+                            <i class="fas fa-stethoscope"></i>
+                        </div>
+                        <div class="card visit-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <h6 class="card-title mb-1">
+                                            <i class="fas fa-calendar me-2"></i>${visitDate}
+                                            ${visitTime ? `<small class="text-muted ms-2">${visitTime}</small>` : ''}
+                                        </h6>
+                                        <span class="department-badge">${visit.DepartmentName || 'N/A'}</span>
+                                    </div>
+                                    <span class="badge bg-primary visit-purpose-badge">${visit.VisitPurpose || 'N/A'}</span>
+                                </div>
+                                <div class="mb-2">
+                                    <i class="fas fa-user-md me-2 text-muted"></i>
+                                    <strong>${visit.StaffName || 'N/A'}</strong>
+                                    <small class="text-muted ms-2">${visit.StaffRole || ''}</small>
+                                </div>
+                                ${diagnosesHtml ? `
+                                    <div class="mb-2">
+                                        <i class="fas fa-diagnoses me-2 text-muted"></i>
+                                        <strong>Chẩn đoán:</strong><br>
+                                        ${diagnosesHtml}
+                                    </div>
+                                ` : ''}
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary me-2 view-btn" data-id="${visit.VisitId}">
+                                        <i class="fas fa-eye me-1"></i>Xem chi tiết
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-warning me-2 edit-btn" data-id="${visit.VisitId}">
+                                        <i class="fas fa-edit me-1"></i>Chỉnh sửa
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                `;
+            });
+            
+            timelineHtml += '</ul>';
+            container.html(timelineHtml);
+        }
+
+        function createCharts() {
+            if (!summaryData) return;
+
+            // Department Chart
+            if (summaryData.department_visits.length > 0) {
+                const ctx1 = document.getElementById('departmentChart').getContext('2d');
+                new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: summaryData.department_visits.map(item => item.department),
+                        datasets: [{
+                            data: summaryData.department_visits.map(item => item.count),
+                            backgroundColor: [
+                                '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                                '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Purpose Chart
+            if (summaryData.purpose_visits.length > 0) {
+                const ctx2 = document.getElementById('purposeChart').getContext('2d');
+                new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: summaryData.purpose_visits.map(item => item.purpose),
+                        datasets: [{
+                            label: 'Số lượt khám',
+                            data: summaryData.purpose_visits.map(item => item.count),
+                            backgroundColor: '#36A2EB',
+                            borderColor: '#2196F3',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateCommonDiagnoses() {
+            const container = $('#commonDiagnoses');
+            
+            if (!summaryData || !summaryData.common_diagnoses || summaryData.common_diagnoses.length === 0) {
+                container.html(`
+                    <div class="empty-state">
+                        <i class="fas fa-diagnoses"></i>
+                        <p>Chưa có chẩn đoán nào được ghi nhận</p>
+                    </div>
+                `);
+                return;
+            }
+
+            let html = '<div class="list-group list-group-flush">';
+            summaryData.common_diagnoses.forEach((diag, index) => {
+                html += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-circle me-2 text-primary"></i>
+                            ${diag.diagnosis}
+                        </div>
+                        <span class="badge bg-primary rounded-pill">${diag.count}</span>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            
+            container.html(html);
+        }
+
+        function loadDepartments() {
+            $.ajax({
+                url: '/api/departments',
+                method: 'GET',
+                success: function(response) {
+                    const departments = response.departments || [];
+                    let options = '<option value="">Chọn khoa...</option>';
+                    departments.forEach(dept => {
+                        options += `<option value="${dept.DepartmentId}">${dept.DepartmentName}</option>`;
+                    });
+                    $('#visitDepartment').html(options);
+                },
+                error: function(xhr) {
+                    console.error('Error loading departments:', xhr);
+                }
+            });
+        }
+
+        function loadStaffByDepartment(departmentId) {
+            if (!departmentId) {
+                $('#visitStaff').html('<option value="">Chọn bác sĩ...</option>');
+                return;
+            }
+
+            $.ajax({
+                url: `/api/staff?department_id=${departmentId}`,
+                method: 'GET',
+                success: function(response) {
+                    const staff = response.staff || [];
+                    let options = '<option value="">Chọn bác sĩ...</option>';
+                    staff.forEach(person => {
+                        options += `<option value="${person.StaffId}">${person.StaffName} - ${person.StaffRole}</option>`;
+                    });
+                    $('#visitStaff').html(options);
+                },
+                error: function(xhr) {
+                    console.error('Error loading staff:', xhr);
+                }
+            });
+        }
+
+        function createVisit() {
+            const formData = {
+                DepartmentId: $('#visitDepartment').val(),
+                StaffId: $('#visitStaff').val(),
+                VisitPurpose: $('#visitPurpose').val(),
+                diagnosis: $('#visitDiagnosis').val(),
+                ICDCode: $('#visitICDCode').val()
+            };
+
+            $.ajax({
+                url: `/api/patient_visits/${currentPatientId}/create`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(formData),
+                success: function(response) {
+                    $('#addVisitModal').modal('hide');
+                    $('#addVisitForm')[0].reset();
+                    showSuccess('Thêm lượt khám thành công!');
+                    loadPatientVisits();
+                    loadSummaryData();
+                },
+                error: function(xhr) {
+                    console.error('Error creating visit:', xhr);
+                    const error = xhr.responseJSON?.error || 'Có lỗi xảy ra khi thêm lượt khám';
+                    showError(error);
+                }
+            });
+        }
+
+        function viewVisit(visitId) {
+            // TODO: Implement view visit details
+            alert('Chức năng xem chi tiết lượt khám sẽ được phát triển');
+        }
+
+        function editVisit(visitId) {
+            // TODO: Implement edit visit
+            alert('Chức năng chỉnh sửa lượt khám sẽ được phát triển');
+        }
+
+        function deleteVisit(visitId) {
+            if (confirm('Bạn có chắc chắn muốn xóa lượt khám này?')) {
+                // TODO: Implement delete visit
+                alert('Chức năng xóa lượt khám sẽ được phát triển');
+            }
+        }
+
+        function showSuccess(message) {
+            // TODO: Implement toast notification
+            alert(message);
+        }
+
+        function showError(message) {
+            // TODO: Implement toast notification
+            alert('Lỗi: ' + message);
+        }
+    </script>
 </body>
 </html>

@@ -93,7 +93,6 @@ return jsonify({'error': str(e)}), 500       # Consistent error format
 ### Foreign Key Display
 - **Never show IDs in UI** - always show related entity names
 - Use database views to join related data (e.g., Department name instead of DepartmentId)
-- Create views in `schema/database_views_enhanced.sql`
 
 ### Error Handling Pattern
 ```python
@@ -109,6 +108,7 @@ def get_entities():
 
 ## Front-end Expectations
 Use icons instead of text for action buttons.
+DataTables integration is required for all tabular data.
 
 
 ### DataTables Integration Requirements
