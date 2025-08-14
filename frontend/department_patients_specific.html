@@ -397,6 +397,9 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-info" onclick="viewPatientVisits()">
+                        <i class="fas fa-calendar-check"></i> Xem lượt khám
+                    </button>
                     <button type="button" class="btn btn-primary" onclick="editPatient()">
                         <i class="fas fa-edit"></i> Chỉnh sửa
                     </button>
@@ -418,6 +421,22 @@
     <script>
         // Pass department ID from Flask template to JavaScript
         const DEPARTMENT_ID = {{ department_id }};
+        
+        // Function to view patient visits
+        function viewPatientVisits() {
+            const patientId = document.getElementById('modal-patient-id').textContent.trim();
+            if (patientId && patientId !== '-') {
+                // Close the modal first
+                const modal = bootstrap.Modal.getInstance(document.getElementById('patientModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                // Redirect to patient visits page
+                window.location.href = `/patient-visits/${patientId}`;
+            } else {
+                alert('Không thể xác định mã bệnh nhân');
+            }
+        }
     </script>
     <script src="{{ url_for('static', filename='js/department_patients_specific.js') }}?v={{ 'js/department_patients_specific.js' | static_version }}"></script>
 </body>

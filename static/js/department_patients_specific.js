@@ -225,12 +225,17 @@ $(document).ready(function() {
                                         title="Xem chi tiết">
                                     <i class="fas fa-eye"></i>
                                 </button>
+                                <button class="btn btn-outline-info btn-sm visits-btn" 
+                                        data-patient-id="${row.PatientId}" 
+                                        title="Xem lượt khám">
+                                    <i class="fas fa-calendar-check"></i>
+                                </button>
                                 <button class="btn btn-outline-success btn-sm edit-btn" 
                                         data-patient-id="${row.PatientId}" 
                                         title="Chỉnh sửa">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button class="btn btn-outline-info btn-sm history-btn" 
+                                <button class="btn btn-outline-secondary btn-sm history-btn" 
                                         data-patient-id="${row.PatientId}" 
                                         title="Lịch sử điều trị">
                                     <i class="fas fa-history"></i>
@@ -293,6 +298,11 @@ $(document).ready(function() {
         $('#department-patients-table tbody').on('click', '.view-btn', function() {
             const patientData = $(this).data('patient');
             showPatientDetails(patientData);
+        });
+        
+        $('#department-patients-table tbody').on('click', '.visits-btn', function() {
+            const patientId = $(this).data('patient-id');
+            viewPatientVisits(patientId);
         });
         
         $('#department-patients-table tbody').on('click', '.edit-btn', function() {
@@ -364,6 +374,11 @@ $(document).ready(function() {
     function editPatient(patientId) {
         // Redirect to patient departments page with filter
         window.location.href = `/patient_departments?patient=${patientId}`;
+    }
+    
+    function viewPatientVisits(patientId) {
+        // Redirect to patient visits page
+        window.location.href = `/patient-visits/${patientId}`;
     }
     
     function showPatientHistory(patientId) {
