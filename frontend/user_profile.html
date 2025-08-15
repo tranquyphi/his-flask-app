@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ sơ người dùng | HIS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fontawesome.all.min.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .profile-image-container {
+            width: 150px;
+            height: 150px;
+            overflow: hidden;
+            border-radius: 50%;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            background-color: #f8f9fa;
+        }
+        
+        .profile-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        
+        .profile-image-container:hover img {
+            transform: scale(1.05);
+        }
+        
+        .profile-image-container .image-hover-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 5px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .profile-image-container:hover .image-hover-overlay {
+            opacity: 1;
+        }
+        
+        .profile-details {
+            margin-top: 20px;
+        }
+        
+        .profile-actions {
+            margin-top: 15px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header/Navbar -->
+    {% include 'header.html' %}
+    
+    <div class="container py-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-user-circle"></i> Hồ sơ người dùng
+                </h2>
+                
+                <div id="profile-alerts">
+                    <!-- Alerts will be displayed here -->
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- Left column - Profile Image -->
+            <div class="col-md-4 mb-4">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div id="user-profile-container" class="profile-image-container" data-user-id="{{ user.id }}">
+                            <img id="user-profile-image" src="{{ url_for('static', filename='images/default-patient.png') }}" 
+                                 alt="Profile Image">
+                            <div class="image-hover-overlay">
+                                Nhấn để thay đổi
+                            </div>
+                        </div>
+                        
+                        <div class="profile-actions">
+                            <div class="btn-group mt-2">
+                                <button id="profile-upload-btn" class="btn btn-sm btn-outline-primary" style="border-radius: 20px 0 0 20px;">
+                                    <i class="fas fa-upload"></i> Tải ảnh lên
+                                </button>
+                                <button id="view-profile-image-btn" class="btn btn-sm btn-outline-info" style="border-radius: 0 20px 20px 0;">
+                                    <i class="fas fa-search-plus"></i> Phóng to
+                                </button>
+                            </div>
+                            <button id="delete-profile-image" class="btn btn-sm btn-outline-danger mt-2" style="border-radius: 20px;">
+                                <i class="fas fa-trash"></i> Xóa ảnh
+                            </button>
+                        </div>
+                        
+                        <!-- Hidden file input for image upload -->
+                        <input type="file" id="profile-image-upload" accept="image/jpeg,image/png,image/gif" style="display: none;">
+                        
+                        <h5 class="mt-3">{{ user.name }}</h5>
+                        <p class="text-muted">{{ user.role }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right column - User Details -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Thông tin cá nhân</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="profile-form">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="user-name" class="form-label">Họ và tên</label>
+                                    <input type="text" class="form-control" id="user-name" value="{{ user.name }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="user-email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="user-email" value="{{ user.email }}">
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="user-phone" class="form-label">Số điện thoại</label>
+                                    <input type="tel" class="form-control" id="user-phone" value="{{ user.phone }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="user-department" class="form-label">Phòng/ban</label>
+                                    <select class="form-select" id="user-department">
+                                        {% for dept in departments %}
+                                        <option value="{{ dept.id }}" {% if dept.id == user.department_id %}selected{% endif %}>
+                                            {{ dept.name }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Lưu thay đổi
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Đổi mật khẩu</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="password-form">
+                            <div class="mb-3">
+                                <label for="current-password" class="form-label">Mật khẩu hiện tại</label>
+                                <input type="password" class="form-control" id="current-password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="new-password" class="form-label">Mật khẩu mới</label>
+                                <input type="password" class="form-control" id="new-password">
+                            </div>
+                            <div class="mb-3">
+                                <label for="confirm-password" class="form-label">Xác nhận mật khẩu</label>
+                                <input type="password" class="form-control" id="confirm-password">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-key"></i> Cập nhật mật khẩu
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    {% include 'footer.html' %}
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/image_utils.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/user_profile_image.js') }}"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Handle profile form submission
+            $('#profile-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Implement profile update logic
+                // ...
+                
+                // Show success message
+                $('#profile-alerts').html(`
+                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                        Thông tin hồ sơ đã được cập nhật thành công.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+            });
+            
+            // Handle password form submission
+            $('#password-form').on('submit', function(e) {
+                e.preventDefault();
+                
+                // Implement password update logic
+                // ...
+                
+                // Show success message
+                $('#profile-alerts').html(`
+                    <div class="alert alert-success alert-dismissible fade show mt-2" role="alert">
+                        Mật khẩu đã được cập nhật thành công.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `);
+                
+                // Reset form
+                this.reset();
+            });
+        });
+    </script>
+</body>
+</html>
