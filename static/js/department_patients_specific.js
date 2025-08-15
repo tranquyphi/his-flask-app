@@ -39,19 +39,35 @@ $(document).ready(function() {
         }
     });
     
-    $('#sort-by').on('change', function() {
+        $('#sort-by').on('change', function() {
         if (patientsTable) {
             const sortCol = $(this).val();
-            let colIndex = 4; // Default to admission date
+            let colIndex = 0; // Default to patient name
+            let direction = 'asc';
             
             switch(sortCol) {
-                case 'PatientName': colIndex = 1; break;
-                case 'PatientAge': colIndex = 2; break;
-                case 'At': colIndex = 4; break;
-                case 'DaysAdmitted': colIndex = 5; break;
+                case 'PatientName': 
+                    colIndex = 0;
+                    direction = 'asc';
+                    break;
+                case 'PatientAge': 
+                    colIndex = 1;
+                    direction = 'asc';
+                    break;
+                case 'DaysAdmitted': 
+                    colIndex = 3;
+                    direction = 'desc'; // Higher days first
+                    break;
+                case 'At': 
+                    // This is no longer a visible column, but we can sort by data
+                    patientsTable.order({
+                        column: 'At',
+                        dir: 'desc'
+                    }).draw();
+                    return;
             }
             
-            patientsTable.order([colIndex, 'desc']).draw();
+            patientsTable.order([colIndex, direction]).draw();
         }
     });
     
@@ -147,17 +163,15 @@ $(document).ready(function() {
             destroy: true,
             columns: [
                 { 
-                    data: 'PatientId',
-                    title: 'Mã BN',
-                    render: function(data, type, row) {
-                        return `<strong class="text-primary">${data}</strong>`;
-                    }
-                },
-                { 
                     data: 'PatientName',
                     title: 'Họ tên',
                     render: function(data, type, row) {
-                        return data ? `<strong>${data}</strong>` : 'N/A';
+                        if (type === 'sort' || type === 'type') {
+                            return data || '';
+                        }
+                        // Include PatientId as a badge after patient name
+                        return `<strong>${data || 'N/A'}</strong>
+                                <span class="badge bg-light text-dark ms-1" title="Mã BN">${row.PatientId}</span>`;
                     }
                 },
                 { 
@@ -185,20 +199,6 @@ $(document).ready(function() {
                             'Khác': '<i class="fas fa-genderless text-secondary" title="Khác" style="font-size: 1.2em;"></i>'
                         };
                         return genderIcons[data] || `<span class="text-muted">${data}</span>`;
-                    }
-                },
-
-                { 
-                    data: 'At',
-                    title: 'Ngày vào khoa',
-                    render: function(data, type, row) {
-                        if (type === 'sort' || type === 'type') {
-                            return data || '';
-                        }
-                        if (!data) return '';
-                        const date = new Date(data);
-                        return date.toLocaleDateString('vi-VN') + '<br><small class="text-muted">' + 
-                               date.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'}) + '</small>';
                     }
                 },
                 {
@@ -263,28 +263,29 @@ $(document).ready(function() {
                 }
             ],
             pageLength: 20,
-            responsive: true,
-            scrollX: true,
+            responsive: false, // Disable responsive behavior
+            scrollX: true,     // Enable horizontal scrolling
             scrollCollapse: true,
-            order: [[4, 'desc']], // Order by admission date (was 5)
+            order: [[0, 'asc']], // Order by patient name ascending
             searching: true,
             autoWidth: false,
             columnDefs: [
                 {
-                    targets: [6], // Actions column (was 7)
-                    responsivePriority: 1
+                    targets: [4], // Actions column
+                    width: '160px', // Fixed width for action buttons column
+                    className: 'text-nowrap'
                 },
                 {
-                    targets: [1], // Patient Name - highest priority after actions
-                    responsivePriority: 2
+                    targets: [0], // Patient Name
+                    width: '200px'
                 },
                 {
-                    targets: [0], // Patient ID - lower priority, hidden in mobile
-                    responsivePriority: 4
+                    targets: [1], // Age
+                    width: '80px'
                 },
                 {
-                    targets: [2, 5], // Age and days admitted (was 2, 6)
-                    responsivePriority: 3
+                    targets: [2], // Gender
+                    width: '80px'
                 }
             ],
             language: {
