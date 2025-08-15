@@ -39,23 +39,47 @@ $(document).ready(function() {
         }
     });
     
+    // When the patient modal is hidden, refresh the table image
+    $('#patientModal').on('hidden.bs.modal', function() {
+        // Only refresh if we have a currentPatientId
+        if (currentPatientId) {
+            // Find the patient's row and update its image from the server
+            const $tableImage = $(`.patient-thumbnail[data-patient-id="${currentPatientId}"]`);
+            if ($tableImage.length > 0) {
+                // Force reload from server with cache-busting
+                const imageUrl = `/api/patient/image/${currentPatientId}?refresh=${new Date().getTime()}`;
+                
+                // Create a new image to check if it exists
+                const img = new Image();
+                img.onload = function() {
+                    $tableImage.attr('src', this.src);
+                };
+                img.onerror = function() {
+                    // Keep default image
+                    $tableImage.attr('src', '/static/images/default-patient.png');
+                };
+                img.src = imageUrl;
+            }
+        }
+    });
+    
         $('#sort-by').on('change', function() {
         if (patientsTable) {
             const sortCol = $(this).val();
-            let colIndex = 0; // Default to patient name
+            let colIndex = 1; // Default to patient name
             let direction = 'asc';
             
             switch(sortCol) {
                 case 'PatientName': 
-                    colIndex = 0;
+                    colIndex = 1; // Updated index for patient name
                     direction = 'asc';
                     break;
                 case 'PatientAge': 
-                    colIndex = 1;
+                    colIndex = 2; // Updated index for patient age
                     direction = 'asc';
                     break;
                 case 'DaysAdmitted': 
-                    colIndex = 3;
+                    colIndex = 4; // Updated index for days admitted
                     direction = 'desc'; // Higher days first
                     break;
                 case 'At': 
@@ -67,7 +91,7 @@ $(document).ready(function() {
                     return;
             }
             
-            patientsTable.order([colIndex, direction]).draw();
+            patientsTable.order(colIndex, direction).draw();
         }
     });
     
@@ -162,6 +186,32 @@ $(document).ready(function() {
             data: processedPatients,
             destroy: true,
             columns: [
+                {
+                    data: 'PatientId',
+                    title: 'Ảnh',
+                    orderable: false,
+                    render: function(data, type, row) {
+                        if (type === 'sort' || type === 'type') {
+                            return '';
+                        }
+                        
+                        const patientId = row.PatientId;
+                        const imageUrl = `/api/patient/image/${patientId}`;
+                        
+                        return `
+                            <div class="d-flex justify-content-center">
+                                <div class="patient-row-image" data-patient-id="${patientId}" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background-color: #f5f5f5; position: relative;">
+                                    <img src="/static/images/default-patient.png" 
+                                         data-patient-id="${patientId}"
+                                         class="patient-thumbnail" 
+                                         style="width: 100%; height: 100%; object-fit: cover;" 
+                                         alt="Patient" 
+                                         onerror="this.onerror=null; this.src='/static/images/default-patient.png';">
+                                </div>
+                            </div>
+                        `;
+                    }
+                },
                 { 
                     data: 'PatientName',
                     title: 'Họ tên',
@@ -266,27 +316,16 @@ $(document).ready(function() {
             responsive: false, // Disable responsive behavior
             scrollX: true,     // Enable horizontal scrolling
             scrollCollapse: true,
-            order: [[0, 'asc']], // Order by patient name ascending
+            order: [1, 'asc'], // Order by patient name ascending
             searching: true,
             autoWidth: false,
             columnDefs: [
-                {
-                    targets: [4], // Actions column
-                    width: '160px', // Fixed width for action buttons column
-                    className: 'text-nowrap'
-                },
-                {
-                    targets: [0], // Patient Name
-                    width: '200px'
-                },
-                {
-                    targets: [1], // Age
-                    width: '80px'
-                },
-                {
-                    targets: [2], // Gender
-                    width: '80px'
-                }
+                { targets: 0, width: '60px', className: 'text-center' },  // Image column
+                { targets: 1, width: '200px' },  // Patient Name
+                { targets: 2, width: '80px' },   // Age
+                { targets: 3, width: '80px' },   // Gender
+                { targets: 4, width: '100px' },  // Days admitted
+                { targets: 5, width: '160px', className: 'text-nowrap' }  // Actions
             ],
             language: {
                 emptyTable: "Không có bệnh nhân nào đang nằm viện",
@@ -312,6 +351,16 @@ $(document).ready(function() {
             const patientData = $(this).data('patient');
             showPatientDetails(patientData);
         });
+        
+        // Add click handler for patient thumbnails (also open details)
+        $('#department-patients-table tbody').on('click', '.patient-row-image', function() {
+            const patientId = $(this).data('patient-id');
+            // Find the related view button and trigger its click event
+            $(this).closest('tr').find('.view-btn').click();
+        });
+        
+        // Load thumbnails for all patients after table is initialized
+        loadPatientThumbnails();
         
         $('#department-patients-table tbody').on('click', '.visits-btn', function() {
             const patientId = $(this).data('patient-id');
@@ -485,22 +534,12 @@ $(document).ready(function() {
             console.log('No custom image available for patient, using default');
         };
         
-        // Check if image exists without directly setting img src (to avoid broken image)
-        fetch(imageUrl)
-            .then(response => {
-                if (response.ok) {
-                    img.src = `${imageUrl}?t=${new Date().getTime()}`;
-                } else {
-                    // Set default image if no custom image
-                    $('#modal-patient-image').attr('src', '/static/images/default-patient.png').css('opacity', '1');
-                    $('#image-loading-spinner').remove();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading patient image:', error);
-                $('#modal-patient-image').attr('src', '/static/images/default-patient.png').css('opacity', '1');
-                $('#image-loading-spinner').remove();
-            });
+        // Use the Image object's onload/onerror events to check for image existence
+        // This avoids 404 errors in console
+        img.src = `${imageUrl}?t=${new Date().getTime()}`;
+        
+        // Note: We don't need the fetch() call anymore since the Image object
+        // will handle loading and errors through its event handlers
     }
     
     // Function to upload patient image with preview
@@ -555,7 +594,9 @@ $(document).ready(function() {
                 success: function(response) {
                     console.log('Upload successful:', response);
                     showAlert('Hình ảnh bệnh nhân đã được cập nhật', 'success');
-                    // No need to reload as we already have the preview
+                    
+                    // Update the image in the table as well
+                    updatePatientTableImage(patientId, imageFile);
                 },
                 error: function(xhr, status, error) {
                     console.error('Error uploading image:', error);
@@ -589,6 +630,70 @@ $(document).ready(function() {
         console.log('Auto-refreshing department data...');
         loadDepartmentData();
     }, 5 * 60 * 1000);
+    
+    // Function to load all patient thumbnails in the table
+    function loadPatientThumbnails() {
+        console.log('Loading patient thumbnails for table rows...');
+        
+        // Use a custom image checker function to avoid console errors
+        $('.patient-thumbnail').each(function() {
+            const patientId = $(this).data('patient-id');
+            const imageUrl = `/api/patient/image/${patientId}`;
+            const img = $(this);
+            
+            // Create a new Image object to check if the image exists without generating 404 errors in console
+            const imageChecker = new Image();
+            
+            // Define what happens on successful load
+            imageChecker.onload = function() {
+                // Add cache-busting parameter to avoid browser caching
+                img.attr('src', `${imageUrl}?t=${new Date().getTime()}`);
+            };
+            
+            // Define what happens on error (just use default image, which is already set)
+            imageChecker.onerror = function() {
+                // Keep default image, which is already set in the HTML
+                // No console error needed since this is an expected condition
+                console.log(`Patient ${patientId} has no custom image, using default`);
+            };
+            
+            // Start loading the image (with cache-busting to ensure fresh check)
+            imageChecker.src = `${imageUrl}?check=${new Date().getTime()}`;
+        });
+    }
+    
+    // Function to update patient's image in the table after upload
+    function updatePatientTableImage(patientId, imageFile) {
+        console.log('Updating patient table image for patient:', patientId);
+        
+        // Find the patient's image in the table
+        const $tableImage = $(`.patient-thumbnail[data-patient-id="${patientId}"]`);
+        
+        if ($tableImage.length > 0) {
+            // Create a temporary URL for the uploaded file
+            const tempUrl = URL.createObjectURL(imageFile);
+            
+            // Update the image source with the new image
+            $tableImage.attr('src', tempUrl);
+            
+            // Clean up the temporary URL when the image is loaded
+            $tableImage.on('load', function() {
+                URL.revokeObjectURL(tempUrl);
+                
+                // After a short delay (to allow the modal to close), add a highlight effect
+                setTimeout(function() {
+                    const $container = $tableImage.parent();
+                    $container.css('border-color', '#28a745');
+                    $container.animate({borderWidth: '3px'}, 300)
+                             .animate({borderWidth: '2px'}, 300);
+                }, 500);
+            });
+            
+            console.log('Table image updated successfully');
+        } else {
+            console.log('Could not find patient image in table to update');
+        }
+    }
     
     // All camera-related functions have been removed for simplicity and reliability
     // The system now only supports file upload functionality

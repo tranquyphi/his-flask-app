@@ -198,6 +198,32 @@
         }
         
         /* Touch-friendly improvements */
+        
+        /* Patient thumbnail styles */
+        .patient-row-image {
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 2px solid #f8f9fa;
+        }
+        
+        .patient-row-image:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+            border-color: #20c997;
+        }
+        
+        .patient-thumbnail {
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Make image column a bit more spacious */
+        #department-patients-table th:first-child,
+        #department-patients-table td:first-child {
+            padding-left: 8px;
+            padding-right: 8px;
+            text-align: center;
+            min-width: 60px;
+        }
         .btn {
             min-height: 44px;
         }
@@ -346,6 +372,7 @@
                             <table id="department-patients-table" class="table table-striped table-hover mb-0">
                                 <thead class="table-dark">
                                     <tr>
+                                        <th>Ảnh</th>
                                         <th>Họ tên</th>
                                         <th>Tuổi</th>
                                         <th>Giới tính</th>
