@@ -14,10 +14,20 @@ $(document).ready(function() {
         $('#patient-image-upload').click();
     });
     
-    // Handle file selection
+    // Handle image container click to also trigger file upload
+    $('.patient-image-container').on('click', function() {
+        $('#patient-image-upload').click();
+    });
+    
+    // Handle file selection with improved feedback
     $('#patient-image-upload').on('change', function() {
         if (this.files && this.files[0] && currentPatientId) {
             const file = this.files[0];
+            
+            // Show filename feedback
+            showAlert(`Đã chọn tệp: ${file.name} (${Math.round(file.size/1024)} KB)`, 'info');
+            
+            // Process upload
             uploadPatientImage(currentPatientId, file);
         }
     });
@@ -441,53 +451,130 @@ $(document).ready(function() {
         loadDepartmentData();
     };
     
-    // Function to load patient image
+    // Function to load patient image with loading indicator
     function loadPatientImage(patientId) {
-        // Set default image first
-        $('#modal-patient-image').attr('src', '/static/images/default-patient.png');
+        // Show loading spinner
+        $('#modal-patient-image').css('opacity', '0.6');
+        const originalImage = $('#modal-patient-image').attr('src');
+        
+        // Add loading indicator
+        $('.patient-image-container').append(
+            '<div id="image-loading-spinner" class="position-absolute top-50 start-50 translate-middle">' +
+            '<div class="spinner-border text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">' +
+            '<span class="visually-hidden">Loading...</span></div></div>'
+        );
         
         // Try to load the patient's image
         const imageUrl = `/api/patient/image/${patientId}`;
+        
+        // Create a new image object to test loading
+        const img = new Image();
+        img.onload = function() {
+            // Remove loading spinner
+            $('#image-loading-spinner').remove();
+            // Show the loaded image
+            $('#modal-patient-image').attr('src', this.src).css('opacity', '1');
+        };
+        
+        img.onerror = function() {
+            // Remove loading spinner
+            $('#image-loading-spinner').remove();
+            // Keep the default image
+            $('#modal-patient-image').css('opacity', '1');
+            console.log('No custom image available for patient, using default');
+        };
         
         // Check if image exists without directly setting img src (to avoid broken image)
         fetch(imageUrl)
             .then(response => {
                 if (response.ok) {
-                    $('#modal-patient-image').attr('src', `${imageUrl}?t=${new Date().getTime()}`);
+                    img.src = `${imageUrl}?t=${new Date().getTime()}`;
+                } else {
+                    // Set default image if no custom image
+                    $('#modal-patient-image').attr('src', '/static/images/default-patient.png').css('opacity', '1');
+                    $('#image-loading-spinner').remove();
                 }
             })
             .catch(error => {
                 console.error('Error loading patient image:', error);
+                $('#modal-patient-image').attr('src', '/static/images/default-patient.png').css('opacity', '1');
+                $('#image-loading-spinner').remove();
             });
     }
     
-    // Function to upload patient image
+    // Function to upload patient image with preview
     function uploadPatientImage(patientId, imageFile) {
-        const formData = new FormData();
-        formData.append('image', imageFile);
+        console.log('Starting upload for patient:', patientId);
+        console.log('Image file:', imageFile.name, 'Size:', imageFile.size, 'Type:', imageFile.type);
         
-        $.ajax({
-            url: `/api/patient/image/${patientId}`,
-            type: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            beforeSend: function() {
-                $('#upload-image-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
-            },
-            success: function(response) {
-                showAlert('Hình ảnh bệnh nhân đã được cập nhật', 'success');
-                loadPatientImage(patientId);
-            },
-            error: function(xhr) {
-                console.error('Error uploading image:', xhr);
-                showAlert('Lỗi khi tải lên hình ảnh. Vui lòng thử lại', 'danger');
-            },
-            complete: function() {
-                $('#upload-image-btn').prop('disabled', false).html('<i class="fas fa-upload"></i> Tải ảnh');
-                $('#patient-image-upload').val(''); // Reset file input
-            }
-        });
+        // Check if file is valid
+        if (!imageFile || imageFile.size === 0) {
+            console.error('Invalid image file:', imageFile);
+            showAlert('Tệp ảnh không hợp lệ hoặc trống.', 'danger');
+            return;
+        }
+        
+        // Check file size (max 5MB)
+        if (imageFile.size > 5 * 1024 * 1024) {
+            console.error('File too large:', imageFile.size);
+            showAlert('Tệp ảnh quá lớn. Giới hạn tối đa 5MB.', 'warning');
+            return;
+        }
+        
+        // Check file type
+        const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/jpg'];
+        if (!validImageTypes.includes(imageFile.type)) {
+            console.error('Invalid file type:', imageFile.type);
+            showAlert('Định dạng tệp không hợp lệ. Vui lòng sử dụng JPG, PNG hoặc GIF.', 'warning');
+            return;
+        }
+        
+        // Show preview before upload
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            // Update the image in the modal
+            $('#modal-patient-image').attr('src', e.target.result);
+            
+            // Proceed with upload
+            const formData = new FormData();
+            formData.append('image', imageFile);
+            
+            // Show loading state on upload button
+            $('#upload-image-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            
+            $.ajax({
+                url: `/api/patient/image/${patientId}`,
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                beforeSend: function() {
+                    console.log('Sending upload request...');
+                },
+                success: function(response) {
+                    console.log('Upload successful:', response);
+                    showAlert('Hình ảnh bệnh nhân đã được cập nhật', 'success');
+                    // No need to reload as we already have the preview
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error uploading image:', error);
+                    console.error('Status:', status);
+                    console.error('Response:', xhr.responseText);
+                    showAlert('Lỗi khi tải lên hình ảnh. Vui lòng thử lại', 'danger');
+                    // Reload original image on error
+                    loadPatientImage(patientId);
+                },
+                complete: function() {
+                    // Reset upload button
+                    $('#upload-image-btn').prop('disabled', false).html('<i class="fas fa-upload"></i> Tải ảnh');
+                    $('#patient-image-upload').val(''); // Reset file input
+                    console.log('Upload request completed');
+                }
+            });
+        };
+        
+        // Read the image file
+        reader.readAsDataURL(imageFile);
     }
     // Global function for modal edit button
     window.editPatient = function() {
@@ -501,4 +588,7 @@ $(document).ready(function() {
         console.log('Auto-refreshing department data...');
         loadDepartmentData();
     }, 5 * 60 * 1000);
+    
+    // All camera-related functions have been removed for simplicity and reliability
+    // The system now only supports file upload functionality
 });

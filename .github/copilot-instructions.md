@@ -50,7 +50,7 @@ class PatientWithDepartment(db.Model):
 # Restart HIS service
 sudo systemctl daemon-reload
 sudo systemctl restart his.service
-sudo systemctl status his.service
+
 
 The port: 8000 (not 5000)
 # View logs

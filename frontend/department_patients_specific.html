@@ -198,6 +198,19 @@
             justify-content: center !important;
         }
         
+        /* Patient image hover effects */
+        .patient-image-container:hover img {
+            transform: scale(1.05);
+        }
+        
+        .patient-image-container:hover .image-hover-overlay {
+            opacity: 1;
+        }
+        
+        .patient-image-container {
+            cursor: pointer;
+        }
+        
         .dataTables_length select,
         .dataTables_filter input {
             min-height: 38px;
@@ -365,14 +378,20 @@
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-3 text-center mb-3">
-                            <div class="patient-image-container" style="max-width: 150px; margin: 0 auto;">
+                            <div class="patient-image-container position-relative" style="max-width: 150px; margin: 0 auto; overflow: hidden; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                                 <img id="modal-patient-image" src="/static/images/default-patient.png" alt="Patient Image" 
-                                    class="img-fluid rounded" style="max-height: 150px; width: auto;">
+                                    class="img-fluid" style="max-height: 150px; width: 100%; object-fit: cover; transition: transform 0.3s;">
+                                <div class="image-hover-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); 
+                                    color: white; padding: 5px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s;">
+                                    Nhấn để thay đổi
+                                </div>
                             </div>
-                            <button id="upload-image-btn" class="btn btn-sm btn-outline-secondary mt-2" style="font-size: 0.8rem;">
-                                <i class="fas fa-upload"></i> Tải ảnh
-                            </button>
-                            <input type="file" id="patient-image-upload" accept="image/*" style="display: none;">
+                            <div class="text-center mt-2">
+                                <button id="upload-image-btn" class="btn btn-sm btn-outline-primary" style="font-size: 0.8rem; border-radius: 20px;">
+                                    <i class="fas fa-upload"></i> Tải ảnh
+                                </button>
+                            </div>
+                            <input type="file" id="patient-image-upload" accept="image/jpeg,image/png,image/gif" style="display: none;">
                         </div>
                         <div class="col-md-9">
                             <div class="row">
