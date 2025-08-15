@@ -375,7 +375,6 @@
                                         <th>Ảnh</th>
                                         <th>Họ tên</th>
                                         <th>Tuổi</th>
-                                        <th>Giới tính</th>
                                         <th>Số ngày nằm</th>
                                         <th>Thao tác</th>
                                     </tr>
@@ -421,8 +420,10 @@
                     <div class="row">
                         <div class="col-md-3 text-center mb-3">
                             <div class="patient-image-container position-relative" style="max-width: 150px; margin: 0 auto; overflow: hidden; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                                <!-- The PatientImageUtils.getPatientImageHtml will be replaced by JavaScript after the patient is loaded -->
                                 <img id="modal-patient-image" src="/static/images/default-patient.png" alt="Patient Image" 
-                                    class="img-fluid" style="max-height: 150px; width: 100%; object-fit: cover; transition: transform 0.3s;">
+                                    class="img-fluid patient-image profile" data-patient-id=""
+                                    style="max-height: 150px; width: 100%; object-fit: cover; transition: transform 0.3s;">
                                 <div class="image-hover-overlay" style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.6); 
                                     color: white; padding: 5px; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s;">
                                     Nhấn để thay đổi
@@ -524,6 +525,7 @@
     <script src="{{ url_for('static', filename='js/dataTables.responsive.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/responsive.bootstrap5.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dataTables.buttons.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/patient_image_utils.js') }}"></script>
     
     <!-- Custom JavaScript -->
     <script>
