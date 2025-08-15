@@ -48,7 +48,7 @@ class PatientWithDepartment(db.Model):
 ### Service Management
 ```bash
 # Restart HIS service
-sudo systemctl daemon-reload
+sudo systemctl daemon-reload #if needed
 sudo systemctl restart his.service
 
 
