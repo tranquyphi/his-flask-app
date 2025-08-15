@@ -152,12 +152,14 @@ class Patient(db.Model):
     PatientAddress = db.Column(db.String(255))
     Allergy = db.Column(db.String(255), default='')
     History = db.Column(db.Text)
-    # Check default value for PatientImage
-    # If you want to allow NULL, set default=None
-    # If you want to set a default image, provide the binary data or path
-    # For now, we will set it to None
-    PatientImage = db.Column(db.LargeBinary,default=None)
+    PatientImage = db.Column(db.LargeBinary, default=None)
     PatientNote = db.Column(db.String(100), default='')
+    # Adding missing fields from schema
+    PatientPhone = db.Column(db.String(20))
+    PatientCCCD = db.Column(db.String(20))
+    PatientBHYT = db.Column(db.String(20))
+    PatientBHYTValid = db.Column(db.String(100))
+    PatientRelative = db.Column(db.String(100))
     
     # Relationships
     visits = db.relationship('Visit', backref='patient', lazy=True)

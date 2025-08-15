@@ -4,9 +4,23 @@ $(document).ready(function() {
     console.log('Department ID:', DEPARTMENT_ID);
     
     let patientsTable = null;
+    let currentPatientId = null;
     
     // Automatically load department data on page load
     loadDepartmentData();
+    
+    // Handle image upload button click
+    $('#upload-image-btn').on('click', function() {
+        $('#patient-image-upload').click();
+    });
+    
+    // Handle file selection
+    $('#patient-image-upload').on('change', function() {
+        if (this.files && this.files[0] && currentPatientId) {
+            const file = this.files[0];
+            uploadPatientImage(currentPatientId, file);
+        }
+    });
     
     // Event handlers
     $('#search-patient').on('keyup', function() {
@@ -18,13 +32,13 @@ $(document).ready(function() {
     $('#sort-by').on('change', function() {
         if (patientsTable) {
             const sortCol = $(this).val();
-            let colIndex = 5; // Default to admission date
+            let colIndex = 4; // Default to admission date
             
             switch(sortCol) {
                 case 'PatientName': colIndex = 1; break;
                 case 'PatientAge': colIndex = 2; break;
-                case 'At': colIndex = 5; break;
-                case 'DaysAdmitted': colIndex = 6; break;
+                case 'At': colIndex = 4; break;
+                case 'DaysAdmitted': colIndex = 5; break;
             }
             
             patientsTable.order([colIndex, 'desc']).draw();
@@ -163,19 +177,7 @@ $(document).ready(function() {
                         return genderIcons[data] || `<span class="text-muted">${data}</span>`;
                     }
                 },
-                { 
-                    data: 'PatientAddress',
-                    title: 'Địa chỉ',
-                    render: function(data, type, row) {
-                        if (type === 'sort' || type === 'type') {
-                            return data || '';
-                        }
-                        if (!data) return '<span class="text-muted">Chưa có</span>';
-                        return data.length > 50 ? 
-                            `<small title="${data}">${data.substring(0, 50)}...</small>` : 
-                            `<small>${data}</small>`;
-                    }
-                },
+
                 { 
                     data: 'At',
                     title: 'Ngày vào khoa',
@@ -254,12 +256,12 @@ $(document).ready(function() {
             responsive: true,
             scrollX: true,
             scrollCollapse: true,
-            order: [[5, 'desc']], // Order by admission date
+            order: [[4, 'desc']], // Order by admission date (was 5)
             searching: true,
             autoWidth: false,
             columnDefs: [
                 {
-                    targets: [7], // Actions column
+                    targets: [6], // Actions column (was 7)
                     responsivePriority: 1
                 },
                 {
@@ -271,7 +273,7 @@ $(document).ready(function() {
                     responsivePriority: 4
                 },
                 {
-                    targets: [2, 6], // Age and days admitted
+                    targets: [2, 5], // Age and days admitted (was 2, 6)
                     responsivePriority: 3
                 }
             ],
@@ -356,7 +358,21 @@ $(document).ready(function() {
         $('#modal-patient-name').text(patient.PatientName || 'N/A');
         $('#modal-patient-age').text(patient.PatientAge ? `${patient.PatientAge} tuổi` : 'N/A');
         $('#modal-patient-gender').text(patient.PatientGender || 'N/A');
+        $('#modal-patient-phone').text(patient.PatientPhone || 'Chưa có');
         $('#modal-patient-address').text(patient.PatientAddress || 'Chưa có thông tin');
+        $('#modal-patient-cccd').text(patient.PatientCCCD || 'Chưa có');
+        $('#modal-patient-relative').text(patient.PatientRelative || 'Chưa có');
+        $('#modal-patient-bhyt').text(patient.PatientBHYT || 'Chưa có');
+        $('#modal-patient-bhyt-valid').text(patient.PatientBHYTValid || 'Chưa có');
+        $('#modal-patient-allergy').text(patient.Allergy || 'Không có');
+        $('#modal-patient-history').text(patient.History || 'Không có');
+        $('#modal-patient-note').text(patient.PatientNote || 'Không có');
+        
+        // Set the current patient ID for image upload
+        currentPatientId = patient.PatientId;
+        
+        // Load patient image
+        loadPatientImage(patient.PatientId);
         
         if (patient.At) {
             const admissionDate = new Date(patient.At);
@@ -425,6 +441,54 @@ $(document).ready(function() {
         loadDepartmentData();
     };
     
+    // Function to load patient image
+    function loadPatientImage(patientId) {
+        // Set default image first
+        $('#modal-patient-image').attr('src', '/static/images/default-patient.png');
+        
+        // Try to load the patient's image
+        const imageUrl = `/api/patient/image/${patientId}`;
+        
+        // Check if image exists without directly setting img src (to avoid broken image)
+        fetch(imageUrl)
+            .then(response => {
+                if (response.ok) {
+                    $('#modal-patient-image').attr('src', `${imageUrl}?t=${new Date().getTime()}`);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading patient image:', error);
+            });
+    }
+    
+    // Function to upload patient image
+    function uploadPatientImage(patientId, imageFile) {
+        const formData = new FormData();
+        formData.append('image', imageFile);
+        
+        $.ajax({
+            url: `/api/patient/image/${patientId}`,
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            beforeSend: function() {
+                $('#upload-image-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+            },
+            success: function(response) {
+                showAlert('Hình ảnh bệnh nhân đã được cập nhật', 'success');
+                loadPatientImage(patientId);
+            },
+            error: function(xhr) {
+                console.error('Error uploading image:', xhr);
+                showAlert('Lỗi khi tải lên hình ảnh. Vui lòng thử lại', 'danger');
+            },
+            complete: function() {
+                $('#upload-image-btn').prop('disabled', false).html('<i class="fas fa-upload"></i> Tải ảnh');
+                $('#patient-image-upload').val(''); // Reset file input
+            }
+        });
+    }
     // Global function for modal edit button
     window.editPatient = function() {
         const patientId = $('#modal-patient-id').text();

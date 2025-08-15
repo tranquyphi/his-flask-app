@@ -25,6 +25,14 @@ def get_department_patients(department_id):
                 Patient.PatientAddress,
                 Patient.PatientGender,
                 Patient.PatientName,
+                Patient.PatientPhone,
+                Patient.PatientCCCD,
+                Patient.PatientBHYT,
+                Patient.PatientBHYTValid,
+                Patient.PatientRelative,
+                Patient.Allergy,
+                Patient.History,
+                Patient.PatientNote,
                 Department.DepartmentName,
                 Department.DepartmentType
             )

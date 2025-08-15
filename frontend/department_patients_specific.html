@@ -320,7 +320,6 @@
                                         <th>Họ tên</th>
                                         <th>Tuổi</th>
                                         <th>Giới tính</th>
-                                        <th>Địa chỉ</th>
                                         <th>Ngày vào khoa</th>
                                         <th>Số ngày nằm</th>
                                         <th>Thao tác</th>
@@ -365,25 +364,73 @@
                 </div>
                 <div class="modal-body">
                     <div class="row">
-                        <div class="col-md-6">
-                            <strong>Mã bệnh nhân:</strong>
-                            <p id="modal-patient-id">-</p>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="patient-image-container" style="max-width: 150px; margin: 0 auto;">
+                                <img id="modal-patient-image" src="/static/images/default-patient.png" alt="Patient Image" 
+                                    class="img-fluid rounded" style="max-height: 150px; width: auto;">
+                            </div>
+                            <button id="upload-image-btn" class="btn btn-sm btn-outline-secondary mt-2" style="font-size: 0.8rem;">
+                                <i class="fas fa-upload"></i> Tải ảnh
+                            </button>
+                            <input type="file" id="patient-image-upload" accept="image/*" style="display: none;">
+                        </div>
+                        <div class="col-md-9">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Mã bệnh nhân:</strong>
+                                    <p id="modal-patient-id">-</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Họ tên:</strong>
+                                    <p id="modal-patient-name">-</p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Tuổi:</strong>
+                                    <p id="modal-patient-age">-</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Giới tính:</strong>
+                                    <p id="modal-patient-gender">-</p>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Số điện thoại:</strong>
+                                    <p id="modal-patient-phone">-</p>
+                                </div>
+                                <div class="col-12">
+                                    <strong>Địa chỉ:</strong>
+                                    <p id="modal-patient-address">-</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <strong>Họ tên:</strong>
-                            <p id="modal-patient-name">-</p>
+                            <strong>CCCD:</strong>
+                            <p id="modal-patient-cccd">-</p>
                         </div>
                         <div class="col-md-6">
-                            <strong>Tuổi:</strong>
-                            <p id="modal-patient-age">-</p>
+                            <strong>Người thân:</strong>
+                            <p id="modal-patient-relative">-</p>
                         </div>
                         <div class="col-md-6">
-                            <strong>Giới tính:</strong>
-                            <p id="modal-patient-gender">-</p>
+                            <strong>Mã BHYT:</strong>
+                            <p id="modal-patient-bhyt">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Hiệu lực BHYT:</strong>
+                            <p id="modal-patient-bhyt-valid">-</p>
                         </div>
                         <div class="col-md-12">
-                            <strong>Địa chỉ:</strong>
-                            <p id="modal-patient-address">-</p>
+                            <strong>Tiền sử dị ứng:</strong>
+                            <p id="modal-patient-allergy">-</p>
+                        </div>
+                        <div class="col-md-12">
+                            <strong>Tiền sử bệnh:</strong>
+                            <p id="modal-patient-history">-</p>
+                        </div>
+                        <div class="col-md-12">
+                            <strong>Ghi chú:</strong>
+                            <p id="modal-patient-note">-</p>
                         </div>
                         <div class="col-md-6">
                             <strong>Ngày vào khoa:</strong>
