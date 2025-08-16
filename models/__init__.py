@@ -1,3 +1,0 @@
-"""
-HIS Models Package
-"""
