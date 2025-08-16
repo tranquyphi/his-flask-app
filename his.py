@@ -21,6 +21,9 @@ from api.visits import visits_bp
 from api.patient_visits import patient_visits_bp
 from api.v2_endpoints import v2_bp
 from api.patient_images import patient_images_bp
+from api.document_types import document_types_bp
+from api.patient_documents import patient_documents_bp
+from api.patients import patients_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -119,6 +122,9 @@ app.register_blueprint(drug_groups_bp, url_prefix='/api')
 app.register_blueprint(visits_bp, url_prefix='/api')
 app.register_blueprint(patient_visits_bp, url_prefix='/api')
 app.register_blueprint(patient_images_bp, url_prefix='/api')
+app.register_blueprint(document_types_bp, url_prefix='/api')
+app.register_blueprint(patient_documents_bp, url_prefix='/api')
+app.register_blueprint(patients_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -212,6 +218,11 @@ def excel_upload_page():
 def patients_with_departments_page():
     """Page showing all patients with their department information"""
     return render_template('patients_with_departments.html')
+
+@app.route('/patient-documents')
+def patient_documents_page():
+    """Page for managing patient documents"""
+    return render_template('patient_documents.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

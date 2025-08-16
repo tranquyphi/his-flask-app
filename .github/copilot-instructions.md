@@ -108,7 +108,7 @@ def get_entities():
 
 ## Front-end Expectations
 Use icons instead of text for action buttons.
-DataTables integration is required for all tabular data.
+DataTables template integration is required for all tabular data.
 
 
 ### DataTables Integration Requirements
