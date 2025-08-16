@@ -144,6 +144,19 @@ def upload_patient_document():
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
             
+        # Validate file type
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', 
+                            '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.rtf', '.csv', '.zip']
+        file_ext = os.path.splitext(file.filename.lower())[1]
+        
+        if file_ext not in allowed_extensions:
+            return jsonify({'error': f'Unsupported file type. Allowed extensions: {", ".join(allowed_extensions)}'}), 400
+            
+        # Validate file size (max 20MB)
+        max_size = 20 * 1024 * 1024  # 20MB in bytes
+        if request.content_length > max_size:
+            return jsonify({'error': 'File size exceeds the limit of 20MB'}), 400
+            
         # Get form data
         patient_id = request.form.get('patient_id')
         document_type_id = request.form.get('document_type_id')

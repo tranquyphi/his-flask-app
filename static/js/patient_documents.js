@@ -409,6 +409,24 @@ $(document).ready(function() {
             return;
         }
         
+        // Validate file type
+        const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.pdf', '.doc', '.docx', 
+                                 '.xls', '.xlsx', '.ppt', '.pptx', '.txt', '.rtf', '.csv', '.zip'];
+        const fileName = file.name.toLowerCase();
+        const fileExt = '.' + fileName.split('.').pop();
+        
+        if (!allowedExtensions.includes(fileExt)) {
+            showAlert('danger', `Định dạng tệp không được hỗ trợ. Vui lòng chọn: ${allowedExtensions.join(', ')}`);
+            return;
+        }
+        
+        // Validate file size (max 20MB)
+        const maxSize = 20 * 1024 * 1024; // 20MB in bytes
+        if (file.size > maxSize) {
+            showAlert('danger', 'Kích thước tệp không được vượt quá 20MB');
+            return;
+        }
+        
         // Create form data
         const formData = new FormData();
         formData.append('patient_id', patientId);
