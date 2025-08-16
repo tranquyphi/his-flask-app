@@ -48,3 +48,4 @@ Thumbs.db
 
 #Folder
 /static/documents/*
+!/static/documents/.gitkeep
