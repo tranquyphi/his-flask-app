@@ -200,6 +200,8 @@ $(document).ready(function() {
                 {
                     data: null,
                     orderable: false,
+                    className: 'dt-body-center',
+                    responsivePriority: 1, // Make sure action buttons have high priority in responsive mode
                     render: function(data, type, row) {
                         return `
                             <div class="btn-group btn-group-sm">
@@ -217,7 +219,13 @@ $(document).ready(function() {
                     }
                 }
             ],
-            responsive: true,
+            responsive: {
+                details: {
+                    display: $.fn.dataTable.Responsive.display.childRowImmediate,
+                    type: 'none',
+                    target: ''
+                }
+            },
             dom: '<"row"<"col-md-6"l><"col-md-6 text-end"f>>rtip',
             language: {
                 search: "Tìm kiếm:",
@@ -243,14 +251,19 @@ $(document).ready(function() {
     
     // Attach event handlers for document actions
     function attachDocumentEventHandlers() {
-        // View document handler
-        $('.view-document').on('click', function() {
+        // Use document delegation to handle both original and responsive-created elements
+        // First remove any existing handlers to prevent duplicates
+        $(document).off('click', '.view-document');
+        $(document).off('click', '.delete-document');
+        
+        // View document handler with delegation
+        $(document).on('click', '.view-document', function() {
             const documentId = $(this).data('document-id');
             viewDocument(documentId);
         });
         
-        // Delete document handler
-        $('.delete-document').on('click', function() {
+        // Delete document handler with delegation
+        $(document).on('click', '.delete-document', function() {
             deleteDocumentId = $(this).data('document-id');
             $('#deleteDocumentModal').modal('show');
         });

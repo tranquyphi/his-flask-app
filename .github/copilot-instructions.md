@@ -54,6 +54,7 @@ sudo systemctl restart his.service
 
 The port: 8000 (not 5000)
 # View logs
+gunicorn -w 4 -b 0.0.0.0:8000 his:app
 journalctl -xeu his.service
 ```
 
