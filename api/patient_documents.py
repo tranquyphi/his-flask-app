@@ -11,6 +11,13 @@ import datetime
 import mimetypes
 from werkzeug.utils import secure_filename
 import io
+from PIL import Image, ImageFile
+import pdf2image
+import subprocess
+import logging
+
+# Enable loading of truncated images
+ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 patient_documents_bp = Blueprint('patient_documents', __name__)
 
@@ -24,7 +31,100 @@ def ensure_documents_dir():
     docs_path = get_full_document_path()
     if not os.path.exists(docs_path):
         os.makedirs(docs_path, exist_ok=True)
+    
+    # Also ensure thumbnails directory exists
+    thumbs_path = os.path.join(docs_path, 'thumbnails')
+    if not os.path.exists(thumbs_path):
+        os.makedirs(thumbs_path, exist_ok=True)
+    
     return docs_path
+
+def generate_thumbnail(file_path, file_type, original_filename):
+    """Generate thumbnail for supported file types"""
+    docs_path = get_full_document_path()
+    thumbs_path = os.path.join(docs_path, 'thumbnails')
+    
+    # Ensure thumbnails directory exists
+    if not os.path.exists(thumbs_path):
+        os.makedirs(thumbs_path, exist_ok=True)
+    
+    # Generate thumbnail filename
+    base_name = os.path.splitext(os.path.basename(file_path))[0]
+    thumb_filename = f"{base_name}_thumb.jpg"
+    thumb_path = os.path.join(thumbs_path, thumb_filename)
+    
+    try:
+        if file_type and file_type.startswith('image/'):
+            try:
+                # Generate thumbnail for images
+                with Image.open(file_path) as img:
+                    # Convert to RGB if necessary (for PNG with transparency, etc.)
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        img = img.convert('RGB')
+                    
+                    # Create thumbnail maintaining aspect ratio
+                    img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                    img.save(thumb_path, 'JPEG', quality=85, optimize=True)
+                    
+                    return f"thumbnails/{thumb_filename}"
+            except Exception as img_error:
+                current_app.logger.error(f"Error processing image: {img_error}")
+                return None
+                
+        elif file_type and 'pdf' in file_type.lower():
+            # Generate thumbnail for PDF (first page)
+            try:
+                # Convert first page of PDF to image
+                pages = pdf2image.convert_from_path(file_path, first_page=1, last_page=1, dpi=150)
+                if pages:
+                    img = pages[0]
+                    # Convert to RGB if necessary
+                    if img.mode in ('RGBA', 'LA', 'P'):
+                        img = img.convert('RGB')
+                    
+                    # Create thumbnail
+                    img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                    img.save(thumb_path, 'JPEG', quality=85, optimize=True)
+                    
+                    return f"thumbnails/{thumb_filename}"
+            except Exception as pdf_error:
+                print(f"Error generating PDF thumbnail: {pdf_error}")
+                
+        elif file_type and any(office_type in file_type.lower() for office_type in ['word', 'excel', 'powerpoint', 'document', 'sheet', 'presentation']):
+            # For Office documents, we can try to generate a generic thumbnail
+            # or use LibreOffice headless mode if available
+            try:
+                # Try using LibreOffice to convert first page to image
+                temp_pdf = os.path.join(thumbs_path, f"{base_name}_temp.pdf")
+                result = subprocess.run([
+                    'libreoffice', '--headless', '--convert-to', 'pdf', 
+                    '--outdir', thumbs_path, file_path
+                ], capture_output=True, timeout=30)
+                
+                if result.returncode == 0 and os.path.exists(temp_pdf):
+                    # Convert the PDF to image
+                    pages = pdf2image.convert_from_path(temp_pdf, first_page=1, last_page=1, dpi=150)
+                    if pages:
+                        img = pages[0]
+                        if img.mode in ('RGBA', 'LA', 'P'):
+                            img = img.convert('RGB')
+                        img.thumbnail((200, 200), Image.Resampling.LANCZOS)
+                        img.save(thumb_path, 'JPEG', quality=85, optimize=True)
+                        
+                        # Clean up temp PDF
+                        os.remove(temp_pdf)
+                        
+                        return f"thumbnails/{thumb_filename}"
+                        
+            except Exception as office_error:
+                print(f"Error generating Office document thumbnail: {office_error}")
+        
+        # Return None if thumbnail generation is not supported or failed
+        return None
+        
+    except Exception as e:
+        current_app.logger.error(f"Error generating thumbnail for {original_filename}: {e}")
+        return None
 
 def generate_unique_filename(original_filename):
     """Generate a unique filename to avoid conflicts"""
@@ -76,6 +176,53 @@ def list_patient_documents():
         return jsonify({'patient_documents': documents})
     except Exception as e:
         print(f"Error listing patient documents: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@patient_documents_bp.route('/patient_documents/<int:document_id>/thumbnail', methods=['GET'])
+def get_patient_document_thumbnail(document_id):
+    """Get thumbnail for a patient document"""
+    try:
+        # Find the document
+        document = PatientDocuments.query.get(document_id)
+        if not document:
+            return jsonify({'error': 'Patient document not found'}), 404
+        
+        # Check if thumbnail exists
+        if not document.document_links or 'thumbnail_path' not in document.document_links:
+            # Try to generate thumbnail on-the-fly if original file exists
+            if 'file_path' in document.document_links:
+                file_path = os.path.join(get_full_document_path(), document.document_links['file_path'])
+                if os.path.exists(file_path):
+                    thumbnail_path = generate_thumbnail(file_path, document.file_type, document.original_filename)
+                    if thumbnail_path:
+                        try:
+                            # Update document with thumbnail info
+                            updated_links = dict(document.document_links) if document.document_links else {}
+                            updated_links['thumbnail_path'] = thumbnail_path
+                            updated_links['thumbnail_url'] = f"{DOCUMENTS_PATH}/{thumbnail_path}"
+                            
+                            document.document_links = updated_links
+                            db.session.commit()
+                        except Exception as db_error:
+                            current_app.logger.error(f"Database update error: {db_error}")
+                            db.session.rollback()
+                            return jsonify({'error': str(db_error)}), 500
+                    else:
+                        return jsonify({'error': 'Thumbnail not available for this file type'}), 404
+                else:
+                    return jsonify({'error': 'Original file not found'}), 404
+            else:
+                return jsonify({'error': 'No thumbnail available'}), 404
+        
+        # Serve the thumbnail file
+        thumbnail_path = os.path.join(get_full_document_path(), document.document_links['thumbnail_path'])
+        if os.path.exists(thumbnail_path):
+            return send_file(thumbnail_path, mimetype='image/jpeg')
+        else:
+            return jsonify({'error': 'Thumbnail file not found'}), 404
+            
+    except Exception as e:
+        print(f"Error serving thumbnail: {e}")
         return jsonify({'error': str(e)}), 500
 
 @patient_documents_bp.route('/patient_documents/<int:document_id>', methods=['GET'])
@@ -208,11 +355,19 @@ def upload_patient_document():
         # Determine file type
         file_type = file.content_type or mimetypes.guess_type(file.filename)[0] or 'application/octet-stream'
         
+        # Generate thumbnail if supported
+        thumbnail_path = generate_thumbnail(file_path, file_type, file.filename)
+        
         # Create document links JSON
         document_links = {
             'file_path': unique_filename,
             'url': f"{DOCUMENTS_PATH}/{unique_filename}"
         }
+        
+        # Add thumbnail path if generated
+        if thumbnail_path:
+            document_links['thumbnail_path'] = thumbnail_path
+            document_links['thumbnail_url'] = f"{DOCUMENTS_PATH}/{thumbnail_path}"
         
         # Create metadata JSON
         metadata_value = {

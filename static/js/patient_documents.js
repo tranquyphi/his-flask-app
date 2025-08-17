@@ -160,6 +160,15 @@ $(document).ready(function() {
                 { data: 'DocumentId' },
                 { 
                     data: null,
+                    orderable: false,
+                    className: 'dt-body-center',
+                    responsivePriority: 2,
+                    render: function(data, type, row) {
+                        return renderThumbnail(data);
+                    }
+                },
+                { 
+                    data: null,
                     render: function(data, type, row) {
                         return `<div>
                             <strong>${data.PatientName || 'N/A'}</strong>
@@ -267,6 +276,12 @@ $(document).ready(function() {
             deleteDocumentId = $(this).data('document-id');
             $('#deleteDocumentModal').modal('show');
         });
+        
+        // Thumbnail click handler
+        $(document).on('click', '.document-thumbnail', function() {
+            const documentId = $(this).data('document-id');
+            viewDocument(documentId);
+        });
     }
     
     // Populate patient dropdowns
@@ -306,10 +321,10 @@ $(document).ready(function() {
     function filterByPatient(patientId) {
         if (!patientId) {
             // If no patient is selected, show all documents
-            documentsTable.search('').columns(1).search('').draw();
+            documentsTable.search('').columns(2).search('').draw();
         } else {
-            // Filter by patient ID
-            documentsTable.columns(1).search(patientId).draw();
+            // Filter by patient ID (column 2 now, was 1)
+            documentsTable.columns(2).search(patientId).draw();
         }
     }
     
@@ -317,13 +332,13 @@ $(document).ready(function() {
     function filterByDocumentType(typeId) {
         if (!typeId) {
             // If no type is selected, show all documents
-            documentsTable.columns(2).search('').draw();
+            documentsTable.columns(3).search('').draw();
         } else {
             // Find the type name
             const typeName = allDocumentTypes.find(t => t.DocumentTypeId == typeId)?.DocumentTypeName || '';
             
-            // Filter by document type name
-            documentsTable.columns(2).search(typeName).draw();
+            // Filter by document type name (column 3 now, was 2)
+            documentsTable.columns(3).search(typeName).draw();
         }
     }
     
@@ -583,6 +598,44 @@ $(document).ready(function() {
             </div>
         `);
         $('#loading-overlay').hide();
+    }
+    
+    // Render thumbnail for document
+    function renderThumbnail(document) {
+        const documentId = document.DocumentId;
+        const fileType = document.file_type || '';
+        const fileName = document.original_filename || 'Document';
+        
+        // Check if document has thumbnail or is an image/PDF
+        const hasThumbnail = document.document_links && 
+                           (document.document_links.thumbnail_path || 
+                            fileType.startsWith('image/') || 
+                            fileType.includes('pdf'));
+        
+        if (hasThumbnail) {
+            return `
+                <div class="thumbnail-container">
+                    <img src="/api/patient_documents/${documentId}/thumbnail" 
+                         alt="${fileName}" 
+                         class="document-thumbnail" 
+                         data-document-id="${documentId}"
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="thumbnail-placeholder" style="display: none;">
+                        <i class="fas ${getFileIcon(fileType)}"></i>
+                    </div>
+                    <div class="thumbnail-overlay">
+                        Nhấn để xem
+                    </div>
+                </div>
+            `;
+        } else {
+            // Show file type icon for non-thumbnail files
+            return `
+                <div class="thumbnail-placeholder">
+                    <i class="fas ${getFileIcon(fileType)}"></i>
+                </div>
+            `;
+        }
     }
     
     // Update file name display
