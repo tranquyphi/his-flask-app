@@ -152,10 +152,24 @@ def upload_patient_document():
         if file_ext not in allowed_extensions:
             return jsonify({'error': f'Unsupported file type. Allowed extensions: {", ".join(allowed_extensions)}'}), 400
             
-        # Validate file size (max 20MB)
+        # Validate file size (max 20MB) - check both content length and actual file size
         max_size = 20 * 1024 * 1024  # 20MB in bytes
-        if request.content_length > max_size:
-            return jsonify({'error': 'File size exceeds the limit of 20MB'}), 400
+        
+        # Check request content length first (if available)
+        if request.content_length and request.content_length > max_size:
+            return jsonify({
+                'error': f'File size ({request.content_length // (1024*1024)}MB) exceeds the limit of 20MB'
+            }), 413  # 413 Payload Too Large
+        
+        # Read and validate actual file size
+        file.seek(0, 2)  # Seek to end of file
+        file_size_bytes = file.tell()
+        file.seek(0)  # Reset file pointer to beginning
+        
+        if file_size_bytes > max_size:
+            return jsonify({
+                'error': f'File size ({file_size_bytes // (1024*1024)}MB) exceeds the limit of 20MB'
+            }), 413
             
         # Get form data
         patient_id = request.form.get('patient_id')
@@ -171,7 +185,10 @@ def upload_patient_document():
             return jsonify({'error': 'Patient not found'}), 404
             
         # Ensure document directory exists
-        docs_path = ensure_documents_dir()
+        try:
+            docs_path = ensure_documents_dir()
+        except Exception as e:
+            return jsonify({'error': f'Failed to create documents directory: {str(e)}'}), 500
         
         # Generate a unique filename
         secure_name = secure_filename(file.filename)
@@ -179,10 +196,14 @@ def upload_patient_document():
         
         # Save the file
         file_path = os.path.join(docs_path, unique_filename)
-        file.save(file_path)
         
-        # Get file size
-        file_size = os.path.getsize(file_path)
+        try:
+            file.save(file_path)
+        except Exception as e:
+            return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
+        
+        # Use the file size we already calculated
+        file_size = file_size_bytes
         
         # Determine file type
         file_type = file.content_type or mimetypes.guess_type(file.filename)[0] or 'application/octet-stream'
@@ -211,8 +232,19 @@ def upload_patient_document():
             file_size=file_size
         )
         
-        db.session.add(new_document)
-        db.session.commit()
+        try:
+            db.session.add(new_document)
+            db.session.commit()
+        except Exception as db_error:
+            # If database save fails, clean up the uploaded file
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except Exception as cleanup_error:
+                print(f"Failed to cleanup file after database error: {cleanup_error}")
+            
+            db.session.rollback()
+            return jsonify({'error': f'Failed to save document record: {str(db_error)}'}), 500
         
         # Format response
         doc_dict = new_document.to_dict()

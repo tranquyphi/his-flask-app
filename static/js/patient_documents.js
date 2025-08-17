@@ -440,36 +440,113 @@ $(document).ready(function() {
             formData.append('description', description);
         }
         
-        // Show loading overlay
+        // Show loading overlay with progress
         $('#loading-overlay').show();
         
-        // Submit the form
-        $.ajax({
-            url: '/api/patient_documents',
-            method: 'POST',
-            data: formData,
-            contentType: false,
-            processData: false,
-            success: function(response) {
-                // Hide the modal
-                $('#uploadDocumentModal').modal('hide');
+        // Create progress indicator
+        let progressHtml = `
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Đang tải lên...</span>
+            </div>
+            <div class="mt-3 text-light">
+                <div id="upload-progress">Đang tải lên tệp tin...</div>
+                <div class="progress mt-2" style="height: 20px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" style="width: 0%" id="progress-bar">
+                        0%
+                    </div>
+                </div>
+            </div>
+        `;
+        $('#loading-overlay').html(progressHtml);
+        
+        // Submit the form with XMLHttpRequest for better control and progress
+        const xhr = new XMLHttpRequest();
+        
+        // Handle upload progress
+        xhr.upload.addEventListener('progress', function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                const progressBar = $('#progress-bar');
+                const progressText = $('#upload-progress');
                 
-                // Reset form
-                $('#upload-document-form')[0].reset();
-                $('#file-name').text('');
+                progressBar.css('width', percentComplete + '%');
+                progressBar.text(Math.round(percentComplete) + '%');
                 
-                // Reload documents data
-                loadDocumentsData();
-                
-                // Show success message
-                showAlert('success', 'Tài liệu đã được tải lên thành công');
-            },
-            error: function(xhr, status, error) {
-                $('#loading-overlay').hide();
-                console.error('Error uploading document:', error);
-                showAlert('danger', 'Lỗi khi tải lên tài liệu: ' + (xhr.responseJSON?.error || error));
+                if (percentComplete < 100) {
+                    progressText.text(`Đang tải lên... ${Math.round(percentComplete)}%`);
+                } else {
+                    progressText.text('Đang xử lý tệp tin...');
+                }
             }
         });
+        
+        // Handle completion
+        xhr.addEventListener('load', function() {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try {
+                    const response = JSON.parse(xhr.responseText);
+                    
+                    // Hide the modal
+                    $('#uploadDocumentModal').modal('hide');
+                    
+                    // Reset form
+                    $('#upload-document-form')[0].reset();
+                    $('#file-name').text('');
+                    
+                    // Reload documents data
+                    loadDocumentsData();
+                    
+                    // Show success message
+                    showAlert('success', 'Tài liệu đã được tải lên thành công');
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                    showAlert('danger', 'Lỗi khi xử lý phản hồi từ server');
+                }
+            } else {
+                let errorMessage = `Lỗi HTTP ${xhr.status}`;
+                
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    errorMessage = errorResponse.error || errorMessage;
+                } catch (e) {
+                    // If we can't parse JSON, show status text
+                    errorMessage = xhr.statusText || errorMessage;
+                }
+                
+                console.error('Upload failed:', xhr.status, errorMessage);
+                showAlert('danger', 'Lỗi khi tải lên tài liệu: ' + errorMessage);
+            }
+            
+            // Reset loading overlay
+            resetLoadingOverlay();
+        });
+        
+        // Handle errors and timeouts
+        xhr.addEventListener('error', function() {
+            resetLoadingOverlay();
+            console.error('Upload error occurred');
+            showAlert('danger', 'Lỗi mạng khi tải lên tài liệu. Vui lòng kiểm tra kết nối và thử lại.');
+        });
+        
+        xhr.addEventListener('timeout', function() {
+            resetLoadingOverlay();
+            console.error('Upload timeout occurred');
+            showAlert('danger', 'Tải lên tài liệu bị hết thời gian chờ. Vui lòng thử lại với tệp nhỏ hơn hoặc kết nối mạng tốt hơn.');
+        });
+        
+        xhr.addEventListener('abort', function() {
+            resetLoadingOverlay();
+            console.error('Upload was aborted');
+            showAlert('warning', 'Việc tải lên tài liệu đã bị hủy.');
+        });
+        
+        // Set timeout for large files (5 minutes)
+        xhr.timeout = 300000; // 5 minutes in milliseconds
+        
+        // Open and send request
+        xhr.open('POST', '/api/patient_documents');
+        xhr.send(formData);
     }
     
     // Delete document
@@ -498,10 +575,34 @@ $(document).ready(function() {
         });
     }
     
+    // Helper function to reset loading overlay
+    function resetLoadingOverlay() {
+        $('#loading-overlay').html(`
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Đang tải...</span>
+            </div>
+        `);
+        $('#loading-overlay').hide();
+    }
+    
     // Update file name display
     function updateFileName() {
-        const fileName = $('#document-file')[0].files[0]?.name || '';
-        $('#file-name').text(fileName ? `File: ${fileName}` : '');
+        const fileInput = $('#document-file')[0];
+        const file = fileInput.files[0];
+        const fileNameDiv = $('#file-name');
+        
+        if (file) {
+            const fileSize = formatFileSize(file.size);
+            const maxSize = 20 * 1024 * 1024;
+            const sizeClass = file.size > maxSize ? 'text-danger' : 'text-success';
+            
+            fileNameDiv.html(`
+                <div><strong>File:</strong> ${file.name}</div>
+                <div class="${sizeClass}"><strong>Kích thước:</strong> ${fileSize}</div>
+            `);
+        } else {
+            fileNameDiv.text('');
+        }
     }
     
     // Helper function to format file size

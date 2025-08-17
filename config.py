@@ -36,7 +36,7 @@ class Config:
     
     # Application Settings
     ITEMS_PER_PAGE = int(os.getenv('ITEMS_PER_PAGE', 20))
-    MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB
+    MAX_CONTENT_LENGTH = int(os.getenv('MAX_CONTENT_LENGTH', 25 * 1024 * 1024))  # 25MB (slightly higher than validation limit of 20MB)
     
     # Static File Versioning (increment when JS/CSS changes)
     STATIC_VERSION = '1.5'  # Bump to force client cache refresh
