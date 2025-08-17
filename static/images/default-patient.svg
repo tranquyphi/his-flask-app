@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="100" cy="100" r="95" fill="#f8f9fa" stroke="#dee2e6" stroke-width="4"/>
+  
+  <!-- Patient figure -->
+  <!-- Head -->
+  <circle cx="100" cy="70" r="25" fill="#6c757d"/>
+  
+  <!-- Body -->
+  <rect x="85" y="90" width="30" height="45" rx="15" fill="#6c757d"/>
+  
+  <!-- Medical cross -->
+  <rect x="95" y="110" width="10" height="20" fill="#ffffff"/>
+  <rect x="90" y="115" width="20" height="10" fill="#ffffff"/>
+  
+  <!-- Arms -->
+  <rect x="70" y="95" width="15" height="25" rx="7" fill="#6c757d"/>
+  <rect x="115" y="95" width="15" height="25" rx="7" fill="#6c757d"/>
+  
+  <!-- Legs -->
+  <rect x="88" y="130" width="8" height="30" rx="4" fill="#6c757d"/>
+  <rect x="104" y="130" width="8" height="30" rx="4" fill="#6c757d"/>
+  
+  <!-- Stethoscope around neck -->
+  <path d="M 85 90 Q 75 85 70 95 Q 70 105 80 105 Q 90 105 100 100 Q 110 105 120 105 Q 130 105 130 95 Q 125 85 115 90" 
+        stroke="#28a745" stroke-width="3" fill="none"/>
+  <circle cx="70" cy="100" r="4" fill="#28a745"/>
+  
+  <!-- Text label -->
+  <text x="100" y="180" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#6c757d">Bệnh nhân</text>
+</svg>

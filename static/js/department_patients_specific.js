@@ -27,8 +27,8 @@ $(document).ready(function() {
             // Show filename feedback
             showAlert(`Đã chọn tệp: ${file.name} (${Math.round(file.size/1024)} KB)`, 'info');
             
-            // Process upload
-            uploadPatientImage(currentPatientId, file);
+            // Process upload using patient documents API
+            uploadPatientDocument(currentPatientId, file);
         }
     });
     
@@ -39,12 +39,15 @@ $(document).ready(function() {
         }
     });
     
-    // When the patient modal is hidden, refresh the table image
+        // When the patient modal is hidden, refresh the table image
     $('#patientModal').on('hidden.bs.modal', function() {
         // Only refresh if we have a currentPatientId
         if (currentPatientId) {
-            // Use the utility to update all images of this patient
-            PatientImageUtils.loadAllPatientImages(`.patient-image[data-patient-id="${currentPatientId}"]`);
+            // Refresh the specific patient thumbnail in the table
+            const $thumbnail = $(`.patient-thumbnail[data-patient-id="${currentPatientId}"]`);
+            if ($thumbnail.length > 0) {
+                loadPatientThumbnails();
+            }
         }
     });
     
@@ -182,13 +185,17 @@ $(document).ready(function() {
                         
                         const patientId = row.PatientId;
                         
-                        // Use the patient image utility to generate the HTML
+                        // Generate thumbnail HTML using patient documents API
                         return `
                             <div class="d-flex justify-content-center">
                                 <div class="patient-row-image" data-patient-id="${patientId}" style="width: 40px; height: 40px; border-radius: 50%; overflow: hidden; background-color: #f5f5f5; position: relative;">
-                                    ${PatientImageUtils.getPatientImageHtml(patientId, 'thumbnail', {
-                                        imageClass: 'patient-thumbnail'
-                                    }).trim()}
+                                    <img src="/static/images/default-patient.png" 
+                                         class="patient-thumbnail" 
+                                         data-patient-id="${patientId}"
+                                         style="width: 100%; height: 100%; object-fit: cover; cursor: pointer;" 
+                                         alt="Patient ${patientId}"
+                                         onload="console.log('Default image loaded for patient ${patientId}')"
+                                         onerror="console.error('Failed to load image for patient ${patientId}'); this.src='/static/images/default-patient.png'" />
                                 </div>
                             </div>
                         `;
@@ -407,7 +414,7 @@ $(document).ready(function() {
         
         // Set the patient ID on the modal image and load it
         $('#modal-patient-image').attr('data-patient-id', patient.PatientId);
-        loadPatientImage(patient.PatientId);
+        loadPatientDocumentImage(patient.PatientId);
         
         if (patient.At) {
             const admissionDate = new Date(patient.At);
@@ -476,8 +483,10 @@ $(document).ready(function() {
         loadDepartmentData();
     };
     
-    // Function to load patient image with loading indicator
-    function loadPatientImage(patientId) {
+    // Function to load patient document image (chân dung) with loading indicator
+    function loadPatientDocumentImage(patientId) {
+        console.log('Loading patient document image for patient:', patientId);
+        
         // Show loading spinner
         $('#modal-patient-image').css('opacity', '0.6');
         
@@ -485,71 +494,114 @@ $(document).ready(function() {
         $('.modal-image-spinner').remove();
         
         // Add loading indicator to the specific container that holds the modal patient image
-        // Using a unique class name for the spinner to make it easier to select later
         $('#modal-patient-image').parent().append(
             '<div class="modal-image-spinner position-absolute top-50 start-50 translate-middle">' +
             '<div class="spinner-border text-primary" role="status" style="width: 1.5rem; height: 1.5rem;">' +
             '<span class="visually-hidden">Loading...</span></div></div>'
         );
         
-        // Use the utility to load the patient image
-        PatientImageUtils.loadPatientImage(patientId, '#modal-patient-image', 
-            // Success callback
-            function($img) {
-                // Remove loading spinner for this specific image
+        // Get patient documents to find the image (DocumentTypeId=1)
+        $.ajax({
+            url: `/api/patients/${patientId}/documents`,
+            type: 'GET',
+            success: function(response) {
+                console.log('Patient documents response:', response);
+                
+                // Find the portrait document (DocumentTypeId=1)
+                let portraitDocument = null;
+                if (response.patient_documents && response.patient_documents.length > 0) {
+                    portraitDocument = response.patient_documents.find(doc => 
+                        doc.DocumentTypeId == 1 && doc.file_type && doc.file_type.startsWith('image/')
+                    );
+                }
+                
+                // Remove loading spinner
                 $('.modal-image-spinner').remove();
-                // Show the loaded image
-                $img.css('opacity', '1');
+                
+                if (portraitDocument) {
+                    // Load the document thumbnail
+                    const thumbnailUrl = `/api/patient_documents/${portraitDocument.DocumentId}/thumbnail?t=${new Date().getTime()}`;
+                    $('#modal-patient-image').attr('src', thumbnailUrl).css('opacity', '1');
+                } else {
+                    // No portrait found, use default image
+                    $('#modal-patient-image').attr('src', '/static/images/default-patient.png').css('opacity', '1');
+                }
             },
-            // Error callback
-            function($img) {
-                // Remove loading spinner for this specific image
+            error: function(xhr, status, error) {
+                console.error('Failed to load patient documents:', error);
+                
+                // Remove loading spinner
                 $('.modal-image-spinner').remove();
-                // Keep the default image
-                $img.css('opacity', '1');
+                
+                // Use default image on error
+                $('#modal-patient-image').attr('src', '/static/images/default-patient.png').css('opacity', '1');
             }
-        );
+        });
     }
     
-    // Function to upload patient image with preview
-    function uploadPatientImage(patientId, imageFile) {
-        // Use the utility to handle image upload
-        PatientImageUtils.uploadPatientImage(patientId, imageFile, {
-            // Configure preview element
-            previewElement: '#modal-patient-image',
-            
-            // Configure loading button
-            loadingElement: '#upload-image-btn',
-            loadingElementContent: '<i class="fas fa-upload"></i> Tải ảnh',
-            
-            // Update all images of this patient in the table
-            updateElements: [
-                `.patient-image[data-patient-id="${patientId}"]`
-            ],
-            
-            // Success callback
-            onSuccess: function(response) {
-                showAlert('Hình ảnh bệnh nhân đã được cập nhật', 'success');
+    // Function to upload patient document (image) as DocumentTypeId=1
+    function uploadPatientDocument(patientId, imageFile) {
+        console.log('Starting patient document upload for patient:', patientId);
+        
+        // Validate file type
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (!allowedTypes.includes(imageFile.type)) {
+            showAlert('Chỉ hỗ trợ tệp hình ảnh (JPEG, PNG, GIF)', 'warning');
+            return;
+        }
+        
+        // Validate file size (max 5MB)
+        const maxSize = 5 * 1024 * 1024;
+        if (imageFile.size > maxSize) {
+            showAlert('Kích thước tệp không được vượt quá 5MB', 'warning');
+            return;
+        }
+        
+        // Show loading state
+        const $uploadBtn = $('#upload-image-btn');
+        const originalBtnText = $uploadBtn.html();
+        $uploadBtn.html('<i class="fas fa-spinner fa-spin"></i> Đang tải...').prop('disabled', true);
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('patient_id', patientId);
+        formData.append('document_type_id', '1'); // DocumentTypeId=1 for "Chân dung"
+        formData.append('file', imageFile);
+        formData.append('description', 'Ảnh chân dung bệnh nhân');
+        
+        // Upload to patient documents API
+        $.ajax({
+            url: '/api/patient_documents',
+            type: 'POST',
+            data: formData,
+            contentType: false,
+            processData: false,
+            success: function(response) {
+                console.log('Document upload successful:', response);
+                showAlert('Ảnh chân dung đã được cập nhật thành công', 'success');
                 
-                // Apply highlight effect to the table image
-                setTimeout(function() {
-                    const $container = $(`.patient-row-image[data-patient-id="${patientId}"]`);
-                    $container.css('border-color', '#28a745');
-                    $container.animate({borderWidth: '3px'}, 300)
-                             .animate({borderWidth: '2px'}, 300);
-                }, 500);
+                // Reload patient image in modal
+                loadPatientDocumentImage(patientId);
+                
+                // Update thumbnail in table
+                loadPatientThumbnails();
+                
+                // Reset file input
+                $('#patient-image-upload').val('');
             },
-            
-            // Error callback
-            onError: function(error) {
-                showAlert('Lỗi khi tải lên hình ảnh. Vui lòng thử lại', 'danger');
-                // Reload original image on error
-                loadPatientImage(patientId);
+            error: function(xhr, status, error) {
+                console.error('Document upload failed:', xhr.responseText);
+                let errorMessage = 'Lỗi khi tải lên ảnh chân dung';
+                
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                }
+                
+                showAlert(errorMessage, 'danger');
             },
-            
-            // Complete callback
-            onComplete: function() {
-                $('#patient-image-upload').val(''); // Reset file input
+            complete: function() {
+                // Restore button state
+                $uploadBtn.html(originalBtnText).prop('disabled', false);
             }
         });
     }
@@ -566,12 +618,56 @@ $(document).ready(function() {
         loadDepartmentData();
     }, 5 * 60 * 1000);
     
-    // Function to load all patient thumbnails in the table
+    // Function to load all patient thumbnails in the table using documents API
     function loadPatientThumbnails() {
         console.log('Loading patient thumbnails for table rows...');
         
-        // Use the utility to load all patient images in the table
-        PatientImageUtils.loadAllPatientImages('.patient-image');
+        // Find all patient thumbnail images in the table
+        $('.patient-thumbnail').each(function() {
+            const $img = $(this);
+            const patientId = $img.data('patient-id');
+            
+            if (!patientId) {
+                console.log('No patient ID found for thumbnail, setting default');
+                $img.attr('src', '/static/images/default-patient.png');
+                return;
+            }
+            
+            console.log(`Loading thumbnail for patient ${patientId}`);
+            
+            // Load patient documents to find portrait
+            $.ajax({
+                url: `/api/patients/${patientId}/documents`,
+                type: 'GET',
+                success: function(response) {
+                    console.log(`Documents response for patient ${patientId}:`, response);
+                    
+                    // Find the portrait document (DocumentTypeId=1)
+                    let portraitDocument = null;
+                    if (response.patient_documents && response.patient_documents.length > 0) {
+                        portraitDocument = response.patient_documents.find(doc => 
+                            doc.DocumentTypeId == 1 && doc.file_type && doc.file_type.startsWith('image/')
+                        );
+                    }
+                    
+                    if (portraitDocument) {
+                        // Load the document thumbnail
+                        console.log(`Found portrait document ${portraitDocument.DocumentId} for patient ${patientId}`);
+                        const thumbnailUrl = `/api/patient_documents/${portraitDocument.DocumentId}/thumbnail?t=${new Date().getTime()}`;
+                        $img.attr('src', thumbnailUrl);
+                    } else {
+                        // No portrait found, set default image explicitly
+                        console.log(`No portrait document found for patient ${patientId}, using default`);
+                        $img.attr('src', '/static/images/default-patient.png');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(`Failed to load documents for patient ${patientId}:`, error);
+                    // Set default image on error
+                    $img.attr('src', '/static/images/default-patient.png');
+                }
+            });
+        });
     }
     
     // The updatePatientTableImage function has been replaced by PatientImageUtils.uploadPatientImage
