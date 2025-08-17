@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
-from models import db, BodyPart
+from models_main import db
+from models import BodyPart
 
 body_parts_bp = Blueprint('body_parts', __name__)
 

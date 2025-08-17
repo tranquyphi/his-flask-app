@@ -289,7 +289,7 @@ def upload_excel(table_name):
     Required: POST request with 'file' in form-data
     Optional: 'sheet_name' in form-data (defaults to first sheet if not provided)
     """
-    from models import db
+    from models_main import db
     
     if 'file' not in request.files:
         return jsonify({'error': 'No file part'}), 400

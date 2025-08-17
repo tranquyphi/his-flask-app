@@ -4,7 +4,8 @@ Basic CRUD operations for Visit management
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc, desc, text
-from models import db, Visit, Patient, Department, Staff
+from models_main import db
+from models import Visit, Patient, Department, Staff
 from datetime import datetime
 
 visits_bp = Blueprint('visits', __name__)

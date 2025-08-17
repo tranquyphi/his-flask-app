@@ -4,7 +4,8 @@ CRUD operations for Patient management
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc, text
-from models import db, Patient
+from models_main import db
+from models import Patient
 
 patients_bp = Blueprint('patients', __name__)
 

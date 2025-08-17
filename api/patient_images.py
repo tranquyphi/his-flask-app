@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, send_file, Response, request
-from models import db, Patient
+from models_main import db
+from models import Patient
 import base64
 import io
 from PIL import Image

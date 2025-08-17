@@ -5,7 +5,8 @@ CRUD operations for DrugGroup management
 
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models import db, DrugGroup
+from models_main import db
+from models import DrugGroup
 
 drug_groups_bp = Blueprint('drug_groups', __name__)
 

@@ -4,7 +4,8 @@ CRUD operations for Drug Templates
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models import db, DrugTemplate, Department
+from models_main import db
+from models import DrugTemplate, Department
 
 drug_template_bp = Blueprint('drug_template', __name__)
 

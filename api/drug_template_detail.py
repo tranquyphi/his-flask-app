@@ -4,7 +4,8 @@ Managing associations between drug templates and drugs
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models import db, DrugTemplate, DrugTemplateDetail, Drug, DrugGroup, Department
+from models_main import db
+from models import DrugTemplate, DrugTemplateDetail, Drug, DrugGroup, Department
 
 drug_template_detail_bp = Blueprint('drug_template_detail', __name__)
 

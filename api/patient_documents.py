@@ -3,7 +3,9 @@ Patient Documents API Blueprint
 CRUD operations for managing patient documents
 """
 from flask import Blueprint, request, jsonify, current_app, send_file
-from models import db, PatientDocuments, DocumentType, DOCUMENTS_PATH, Patient
+from models_main import db, DOCUMENTS_PATH
+from models import PatientDocuments, Patient
+from models.DocumentType import DocumentType
 import os
 import json
 import uuid
@@ -483,22 +485,36 @@ def delete_patient_document(document_id):
         if not document:
             return jsonify({'error': 'Patient document not found'}), 404
             
-        # Get file path before deleting the record
+        # Get file paths before deleting the record
         file_path = None
-        if document.document_links and 'file_path' in document.document_links:
-            file_path = os.path.join(get_full_document_path(), document.document_links['file_path'])
+        thumbnail_path = None
+        
+        if document.document_links:
+            if 'file_path' in document.document_links:
+                file_path = os.path.join(get_full_document_path(), document.document_links['file_path'])
+            
+            if 'thumbnail_path' in document.document_links:
+                thumbnail_path = os.path.join(get_full_document_path(), document.document_links['thumbnail_path'])
         
         # Delete the database record
         db.session.delete(document)
         db.session.commit()
         
-        # Delete the file if it exists
+        # Delete the original file if it exists
         if file_path and os.path.exists(file_path):
             try:
                 os.remove(file_path)
+                current_app.logger.info(f"Deleted original file: {file_path}")
             except OSError as e:
-                print(f"Warning: Could not delete file {file_path}: {e}")
-                # We don't return error here since the database record was deleted successfully
+                current_app.logger.warning(f"Could not delete original file {file_path}: {e}")
+        
+        # Delete the thumbnail file if it exists
+        if thumbnail_path and os.path.exists(thumbnail_path):
+            try:
+                os.remove(thumbnail_path)
+                current_app.logger.info(f"Deleted thumbnail file: {thumbnail_path}")
+            except OSError as e:
+                current_app.logger.warning(f"Could not delete thumbnail file {thumbnail_path}: {e}")
                 
         return jsonify({'message': 'Patient document deleted successfully'})
     except Exception as e:

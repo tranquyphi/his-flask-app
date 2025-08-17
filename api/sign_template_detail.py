@@ -4,7 +4,8 @@ Operations for managing signs within specific templates
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models import db, SignTemplate, SignTemplateDetail, Sign, BodySystem
+from models_main import db
+from models import SignTemplate, SignTemplateDetail, Sign, BodySystem
 
 sign_template_detail_bp = Blueprint('sign_template_detail', __name__)
 

@@ -5,7 +5,8 @@ Retrieve and manage visits for a specific patient
 from flask import Blueprint, jsonify, request
 from datetime import datetime
 from sqlalchemy import desc, asc
-from models import db, Patient, Visit, Department, Staff, VisitDiagnosis
+from models_main import db
+from models import Patient, Visit, Department, Staff, VisitDiagnosis
 
 patient_visits_bp = Blueprint('patient_visits', __name__)
 
