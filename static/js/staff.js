@@ -56,6 +56,15 @@ $(document).ready(function() {
         const staffId = $(this).data('staff-id');
         showDepartmentAssignmentModal(staffId);
     });
+    
+    // Search and filter handlers
+    $('#name-search').on('keyup', function() {
+        staffTable.search($(this).val()).draw();
+    });
+    
+    $('#department-filter').on('change', applyFilters);
+    $('#role-filter').on('change', applyFilters);
+    $('#availability-filter').on('change', applyFilters);
 });
 
 /**
@@ -152,6 +161,10 @@ function initStaffTable() {
                 }
             }
         ],
+        // Disable DataTables built-in search since we'll use custom filters
+        searching: true,
+        // Hide default search box
+        dom: '<"row"<"col-sm-12"tr>><"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
         responsive: true,
         lengthMenu: [5, 10, 25, 50],
         pageLength: 10,
@@ -174,16 +187,23 @@ function loadDepartments() {
         method: 'GET',
         success: function(response) {
             departments = response.departments;
-            const departmentSelect = $('#department-id');
             
-            // Clear existing options
-            departmentSelect.empty().append('<option value="">Select a department</option>');
+            // Populate department dropdowns (modal and filter)
+            const dropdowns = ['#department-id', '#department-filter'];
             
-            // Add department options
-            departments.forEach(function(dept) {
-                departmentSelect.append(
-                    `<option value="${dept.DepartmentId}">${dept.DepartmentName} (${dept.DepartmentType || 'N/A'})</option>`
-                );
+            dropdowns.forEach(function(selector) {
+                const select = $(selector);
+                const isFilter = selector === '#department-filter';
+                
+                // Clear existing options
+                select.empty().append(`<option value="">${isFilter ? 'All Departments' : 'Select a department'}</option>`);
+                
+                // Add department options
+                departments.forEach(function(dept) {
+                    select.append(
+                        `<option value="${dept.DepartmentId}">${dept.DepartmentName} (${dept.DepartmentType || 'N/A'})</option>`
+                    );
+                });
             });
         },
         error: function(error) {
@@ -428,61 +448,78 @@ function showDepartmentAssignmentModal(staffId) {
     // Load staff details
     showLoadingOverlay();
     
-    // Load departments for dropdown
+    // Load departments for dropdown if not already loaded
+    if (departments.length > 0) {
+        populateAssignmentDepartmentDropdown();
+        loadStaffForAssignment(staffId);
+    } else {
+        $.ajax({
+            url: '/api/departments',
+            method: 'GET',
+            success: function(response) {
+                departments = response.departments;
+                populateAssignmentDepartmentDropdown();
+                loadStaffForAssignment(staffId);
+            },
+            error: function(error) {
+                console.error('Error loading departments:', error);
+                showAlert('danger', 'Failed to load departments. Please try again.');
+                hideLoadingOverlay();
+            }
+        });
+    }
+}
+
+/**
+ * Populate department dropdown in assignment modal
+ */
+function populateAssignmentDepartmentDropdown() {
+    const departmentSelect = $('#department');
+    
+    // Clear existing options
+    departmentSelect.empty().append('<option value="">Select a department</option>');
+    
+    // Add department options
+    departments.forEach(function(dept) {
+        departmentSelect.append(
+            `<option value="${dept.DepartmentId}">${dept.DepartmentName} (${dept.DepartmentType || 'N/A'})</option>`
+        );
+    });
+}
+
+/**
+ * Load staff details for assignment
+ */
+function loadStaffForAssignment(staffId) {
     $.ajax({
-        url: '/api/departments',
+        url: `/api/staff/${staffId}`,
         method: 'GET',
         success: function(response) {
-            departments = response.departments;
-            const departmentSelect = $('#department');
+            const staff = response.staff;
             
-            // Clear existing options
-            departmentSelect.empty().append('<option value="">Select a department</option>');
+            // Update modal title
+            $('#assignment-modal-title').text(`Assign Department: ${staff.StaffName}`);
             
-            // Add department options
-            departments.forEach(function(dept) {
-                departmentSelect.append(
-                    `<option value="${dept.DepartmentId}">${dept.DepartmentName} (${dept.DepartmentType || 'N/A'})</option>`
-                );
-            });
+            // Show current department if exists
+            if (staff.DepartmentId) {
+                $('#current-department').text(staff.DepartmentName);
+                $('#current-department-container').removeClass('d-none');
+                
+                // Pre-select current department in dropdown
+                $('#department').val(staff.DepartmentId);
+                $('#position').val(staff.Position || '');
+            } else {
+                $('#current-department-container').addClass('d-none');
+            }
             
-            // Load staff details
-            $.ajax({
-                url: `/api/staff/${staffId}`,
-                method: 'GET',
-                success: function(response) {
-                    const staff = response.staff;
-                    
-                    // Update modal title
-                    $('#assignment-modal-title').text(`Assign Department: ${staff.StaffName}`);
-                    
-                    // Show current department if exists
-                    if (staff.DepartmentId) {
-                        $('#current-department').text(staff.DepartmentName);
-                        $('#current-department-container').removeClass('d-none');
-                        
-                        // Pre-select current department in dropdown
-                        $('#department').val(staff.DepartmentId);
-                        $('#position').val(staff.Position || '');
-                    } else {
-                        $('#current-department-container').addClass('d-none');
-                    }
-                    
-                    // Show modal
-                    $('#assignment-modal').modal('show');
-                    
-                    hideLoadingOverlay();
-                },
-                error: function(error) {
-                    console.error('Error loading staff:', error);
-                    showAlert('danger', 'Failed to load staff data. Please try again.');
-                    hideLoadingOverlay();
-                }
-            });
+            // Show modal
+            $('#assignment-modal').modal('show');
+            
+            hideLoadingOverlay();
         },
         error: function(error) {
-            console.error('Error loading departments:', error);
-            showAlert('danger', 'Failed to load departments. Please try again.');
+            console.error('Error loading staff:', error);
+            showAlert('danger', 'Failed to load staff data. Please try again.');
             hideLoadingOverlay();
         }
     });
@@ -569,3 +606,46 @@ function showLoadingOverlay() {
 function hideLoadingOverlay() {
     $('#loading-overlay').hide();
 }
+
+/**
+ * Apply filters to the staff table
+ */
+function applyFilters() {
+    staffTable.draw();
+}
+
+// Add custom filtering function to DataTables
+$.fn.dataTable.ext.search.push(function(settings, data, dataIndex, rowData) {
+    // Only apply to our staff table
+    if (settings.nTable.id !== 'staff-table') {
+        return true;
+    }
+    
+    // Get filter values
+    const departmentFilter = $('#department-filter').val();
+    const roleFilter = $('#role-filter').val();
+    const availabilityFilter = $('#availability-filter').val();
+    
+    // Apply department filter
+    if (departmentFilter && rowData.DepartmentId != departmentFilter) {
+        return false;
+    }
+    
+    // Apply role filter
+    if (roleFilter && rowData.StaffRole != roleFilter) {
+        return false;
+    }
+    
+    // Apply availability filter
+    if (availabilityFilter) {
+        if (availabilityFilter === 'available' && !rowData.StaffAvailable) {
+            return false;
+        }
+        if (availabilityFilter === 'unavailable' && rowData.StaffAvailable) {
+            return false;
+        }
+    }
+    
+    // All filters passed
+    return true;
+});
