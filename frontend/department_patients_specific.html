@@ -406,6 +406,118 @@
         </div>
     </div>
 
+    <!-- Department Assignment Modal -->
+    <div class="modal fade" id="departmentAssignmentModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title" id="assignment-modal-title">Chuyển khoa cho bệnh nhân</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="assignment-alert" class="d-none"></div>
+                    
+                    <div id="current-department-container" class="mb-3 d-none">
+                        <label class="form-label">Khoa hiện tại</label>
+                        <div class="alert alert-light border d-flex align-items-center">
+                            <i class="fas fa-info-circle me-2 text-info"></i>
+                            <div id="current-department" class="fw-bold"></div>
+                        </div>
+                    </div>
+                    
+                    <form id="assignment-form">
+                        <div class="mb-3">
+                            <label for="department" class="form-label">Khoa chuyển đến <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-hospital"></i></span>
+                                <select class="form-select" id="department" required>
+                                    <option value="">Chọn khoa</option>
+                                    <!-- Will be populated dynamically -->
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reason" class="form-label">Lý do chuyển khoa</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-comment-medical"></i></span>
+                                <select class="form-select" id="reason" required>
+                                    <option value="DT">Điều trị (DT)</option>
+                                    <option value="PT">Phẫu thuật (PT)</option>
+                                    <option value="KCK">Khám chuyên khoa (KCK)</option>
+                                    <option value="CLS">Cận lâm sàng (CLS)</option>
+                                    <option value="KH">Khác (KH)</option>
+                                </select>
+                            </div>
+                            <small class="form-text text-muted">
+                                Chọn lý do chuyển khoa phù hợp từ danh sách.
+                            </small>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <small>Chuyển khoa sẽ cập nhật lịch sử điều trị của bệnh nhân.</small>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i> Hủy
+                    </button>
+                    <button type="button" class="btn btn-primary" id="save-assignment-btn">
+                        <i class="fas fa-save me-1"></i> Lưu chuyển khoa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department History Modal -->
+    <div class="modal fade" id="departmentHistoryModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="history-modal-title">Lịch sử chuyển khoa</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3" id="patient-info-container">
+                        <h6 class="fw-bold" id="history-patient-name"></h6>
+                        <p class="text-muted mb-3" id="history-patient-info"></p>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table id="department-history-table" class="table table-striped table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Khoa</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Lý do</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Will be populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="no-history-alert" class="alert alert-info mt-3 d-none">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Bệnh nhân này chưa có lịch sử chuyển khoa nào.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary" id="print-history-btn">
+                        <i class="fas fa-print me-1"></i> In lịch sử
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Patient Details Modal -->
     <div class="modal fade" id="patientModal" tabindex="-1">
         <div class="modal-dialog modal-lg">

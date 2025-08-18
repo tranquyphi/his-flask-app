@@ -9,7 +9,7 @@ This is a **Flask-based Hospital Information System** with MariaDB backend, usin
 - **`his.py`**: Main Flask app with both API routes (`/api/*`) and UI routes (`/patients`, `/dashboard`)
 - **`config.py`**: Environment-aware configuration (development/production/testing)
 - **`frontend/`**: The UI html pages
-- **`static/js/`**: Frontend logic using Tabulator.js for data tables with CRUD operations
+- **`static/js/`**: Frontend logic for data tables with CRUD operations
 - **`schema/`**: Database schemas and views DDL
 - **`authorization_audit/`**: Complete authorization framework (future implementation)
 
@@ -18,6 +18,7 @@ This is a **Flask-based Hospital Information System** with MariaDB backend, usin
 ### ORM Views (Key Pattern)
 Instead of raw SQL, this project uses **ORM models for database views**:
 ```python
+E.g:
 class PatientWithDepartment(db.Model):
     __tablename__ = 'patients_with_department'
     __table_args__ = {'info': dict(is_view=True)}
@@ -26,6 +27,8 @@ class PatientWithDepartment(db.Model):
     def to_dict(self):  # Always include for JSON serialization
         return {'PatientId': self.PatientId, ...}
 ```
+### CHECK The table structure by DESCRIBE MYSQL statement
+### Use schema in folder /schema
 
 ### Database Connection
 - Connection string: `mysql+pymysql://bvthanghoa:57PhanKeBinh@localhost/examdb`
@@ -110,6 +113,7 @@ def get_entities():
 ## Front-end Expectations
 Use icons instead of text for action buttons.
 DataTables template integration is required for all tabular data.
+
 
 
 ### DataTables Integration Requirements

@@ -28,6 +28,7 @@ from api.document_types import document_types_bp
 from api.patient_documents import patient_documents_bp
 from api.patients import patients_bp
 from api.staff import staff_bp
+from api.patient_departments import patient_depts_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -130,6 +131,7 @@ app.register_blueprint(document_types_bp, url_prefix='/api')
 app.register_blueprint(patient_documents_bp, url_prefix='/api')
 app.register_blueprint(patients_bp, url_prefix='/api')
 app.register_blueprint(staff_bp, url_prefix='/api')
+app.register_blueprint(patient_depts_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
