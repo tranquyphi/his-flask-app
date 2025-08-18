@@ -27,6 +27,7 @@ from api.patient_images import patient_images_bp
 from api.document_types import document_types_bp
 from api.patient_documents import patient_documents_bp
 from api.patients import patients_bp
+from api.staff import staff_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -128,6 +129,7 @@ app.register_blueprint(patient_images_bp, url_prefix='/api')
 app.register_blueprint(document_types_bp, url_prefix='/api')
 app.register_blueprint(patient_documents_bp, url_prefix='/api')
 app.register_blueprint(patients_bp, url_prefix='/api')
+app.register_blueprint(staff_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -188,7 +190,13 @@ def procedures_page():
 
 @app.route('/staff')
 def staff_page():
+    """Staff management page"""
     return render_template('staff.html')
+    
+@app.route('/staff/history/<int:staff_id>')
+def staff_history_page(staff_id):
+    """Page showing department assignment history for a staff member"""
+    return render_template('staff_history.html', staff_id=staff_id)
 
 @app.route('/body-sites')
 def body_sites_page():
