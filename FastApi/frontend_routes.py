@@ -85,6 +85,14 @@ async def staff_page(request: Request):
     """
     return templates.TemplateResponse("staff.html", {"request": request})
 
+@router.get("/staff/history/{staff_id}", response_class=HTMLResponse)
+async def staff_history_page(request: Request, staff_id: int):
+    """Staff history page"""
+    return templates.TemplateResponse("staff_history.html", {
+        "request": request, 
+        "staff_id": staff_id
+    })
+
 @router.get("/patient-documents", response_class=HTMLResponse)
 async def patient_documents_page(request: Request):
     """

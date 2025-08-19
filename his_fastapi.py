@@ -21,11 +21,13 @@ from FastApi.tests_fastapi import router as tests_router
 from FastApi.patients_fastapi import router as patients_router
 from FastApi.patient_visits_fastapi import router as patient_visits_router
 from FastApi.visits_fastapi import router as visits_router
-from FastApi.patient_documents_fastapi import router as patient_documents_router
+# from FastApi.patient_documents_fastapi import router as patient_documents_router  # Disabled - using Flask version
 from FastApi.document_types_fastapi import router as document_types_router
 from FastApi.patient_images_fastapi import router as patient_images_router
 from FastApi.drug_template_fastapi import router as drug_template_router
 from FastApi.drug_template_detail_fastapi import router as drug_template_detail_router
+from FastApi.department_patients_fastapi import router as department_patients_router
+from FastApi.user_images_fastapi import router as user_images_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -60,11 +62,13 @@ app.include_router(tests_router)
 app.include_router(patients_router)
 app.include_router(patient_visits_router)
 app.include_router(visits_router)
-app.include_router(patient_documents_router)
+# app.include_router(patient_documents_router)  # Disabled - using Flask version
 app.include_router(document_types_router)
 app.include_router(patient_images_router)
 app.include_router(drug_template_router)
 app.include_router(drug_template_detail_router)
+app.include_router(department_patients_router)
+app.include_router(user_images_router)
 app.include_router(frontend_router)
 
 # Root endpoint - now served by frontend_router

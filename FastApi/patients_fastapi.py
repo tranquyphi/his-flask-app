@@ -74,13 +74,7 @@ async def list_patients(
                 'PatientAge': patient.PatientAge,
                 'PatientAddress': patient.PatientAddress,
                 'PatientPhone': patient.PatientPhone,
-                'PatientCCCD': patient.PatientCCCD,
-                'PatientBHYT': patient.PatientBHYT,
-                'PatientBHYTValid': patient.PatientBHYTValid,
-                'PatientRelative': patient.PatientRelative,
-                'Allergy': patient.Allergy,
-                'History': patient.History,
-                'PatientNote': patient.PatientNote
+                'PatientBHYT': patient.PatientBHYT
             }
             patients_data.append(patient_dict)
             
@@ -104,13 +98,11 @@ async def get_patient(patient_id: str, db: Session = Depends(get_db)):
             'PatientAge': patient.PatientAge,
             'PatientAddress': patient.PatientAddress,
             'PatientPhone': patient.PatientPhone,
-            'PatientCCCD': patient.PatientCCCD,
             'PatientBHYT': patient.PatientBHYT,
             'PatientBHYTValid': patient.PatientBHYTValid,
-            'PatientRelative': patient.PatientRelative,
+            'PatientNote': patient.PatientNote,
             'Allergy': patient.Allergy,
-            'History': patient.History,
-            'PatientNote': patient.PatientNote
+            'History': patient.History
         }
         
         return {'patient': patient_data}

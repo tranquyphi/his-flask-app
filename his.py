@@ -33,6 +33,14 @@ from api.patient_departments import patient_depts_bp
 config_name = 'development'
 app = create_app(config_name)
 
+# Add CORS headers for cross-origin requests (to support FastAPI/Flask hybrid routing)
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
+
 # Create Blueprint for API routes
 bp = Blueprint('api', __name__)
 

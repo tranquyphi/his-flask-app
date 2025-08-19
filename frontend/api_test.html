@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test Results</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .api-test { 
+            border: 1px solid #ccc; 
+            margin: 10px 0; 
+            padding: 15px; 
+            border-radius: 5px; 
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .pending { background-color: #fff3cd; border-color: #ffeaa7; }
+        .result { margin-top: 10px; font-weight: bold; }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/api-config.js"></script>
+</head>
+<body>
+    <h1>API Routing Test Results</h1>
+    
+    <div id="patient_documents_test" class="api-test pending">
+        <h3>Patient Documents API (Flask - 127.0.0.1:8000)</h3>
+        <p>Endpoint: /api/patient_documents</p>
+        <div class="result">Testing...</div>
+    </div>
+    
+    <div id="patients_test" class="api-test pending">
+        <h3>Patients API (FastAPI - localhost:8001)</h3>
+        <p>Endpoint: /api/patients</p>
+        <div class="result">Testing...</div>
+    </div>
+    
+    <div id="document_types_test" class="api-test pending">
+        <h3>Document Types API (Flask - 127.0.0.1:8000)</h3>
+        <p>Endpoint: /api/document_types</p>
+        <div class="result">Testing...</div>
+    </div>
+    
+    <script>
+        $(document).ready(function() {
+            console.log('Starting API tests...');
+            
+            // Test patient_documents (Flask)
+            makeApiCall({
+                url: '/api/patient_documents',
+                method: 'GET',
+                success: function(data) {
+                    console.log('Patient documents success:', data);
+                    const count = data.patient_documents ? data.patient_documents.length : 0;
+                    $('#patient_documents_test').removeClass('pending').addClass('success');
+                    $('#patient_documents_test .result').html('✓ SUCCESS - ' + count + ' documents loaded');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Patient documents error:', xhr.responseText || error);
+                    $('#patient_documents_test').removeClass('pending').addClass('error');
+                    $('#patient_documents_test .result').html('✗ ERROR - ' + (xhr.responseText || error));
+                }
+            });
+            
+            // Test patients (FastAPI)
+            makeApiCall({
+                url: '/api/patients',
+                method: 'GET',
+                success: function(data) {
+                    console.log('Patients success:', data);
+                    const count = data.patients ? data.patients.length : 0;
+                    $('#patients_test').removeClass('pending').addClass('success');
+                    $('#patients_test .result').html('✓ SUCCESS - ' + count + ' patients loaded');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Patients error:', xhr.responseText || error);
+                    $('#patients_test').removeClass('pending').addClass('error');
+                    $('#patients_test .result').html('✗ ERROR - ' + (xhr.responseText || error));
+                }
+            });
+            
+            // Test document_types (Flask)
+            makeApiCall({
+                url: '/api/document_types',
+                method: 'GET', 
+                success: function(data) {
+                    console.log('Document types success:', data);
+                    const count = data.document_types ? data.document_types.length : 0;
+                    $('#document_types_test').removeClass('pending').addClass('success');
+                    $('#document_types_test .result').html('✓ SUCCESS - ' + count + ' document types loaded');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Document types error:', xhr.responseText || error);
+                    $('#document_types_test').removeClass('pending').addClass('error');
+                    $('#document_types_test .result').html('✗ ERROR - ' + (xhr.responseText || error));
+                }
+            });
+        });
+    </script>
+</body>
+</html>

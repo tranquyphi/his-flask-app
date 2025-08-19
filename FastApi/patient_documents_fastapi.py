@@ -51,6 +51,45 @@ def ensure_documents_dir():
         os.makedirs(docs_path, exist_ok=True)
     return docs_path
 
+@router.get("/patient_documents", response_model=dict)
+async def list_all_patient_documents(
+    db: Session = Depends(get_db),
+    skip: int = 0,
+    limit: int = 1000
+):
+    """Get all patient documents (for admin/search purposes)"""
+    try:
+        # Get all documents with patient info
+        documents = db.query(PatientDocuments).offset(skip).limit(limit).all()
+        
+        result = []
+        for doc in documents:
+            # Get patient info
+            patient = db.query(Patient).get(doc.PatientId)
+            
+            doc_dict = {
+                'DocumentId': doc.DocumentId,
+                'PatientId': doc.PatientId,
+                'PatientName': patient.PatientName if patient else 'Unknown',
+                'DocumentTypeId': doc.DocumentTypeId,
+                'DocumentLinks': doc.document_links,
+                'DocumentMetadata': doc.document_metadata,
+                'OriginalFileName': doc.original_filename,
+                'FileType': doc.file_type,
+                'FileSize': doc.file_size,
+                'UploadDate': doc.upload_date.isoformat() if doc.upload_date else None,
+                'LastModified': doc.last_modified.isoformat() if doc.last_modified else None,
+            }
+            result.append(doc_dict)
+        
+        return {
+            'patient_documents': result,
+            'total': len(result)
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving documents: {str(e)}")
+
 @router.get("/patient_documents/{patient_id}", response_model=dict)
 async def get_patient_documents(patient_id: str, db: Session = Depends(get_db)):
     """Get all documents for a specific patient"""
@@ -235,6 +274,18 @@ async def upload_document(
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=str(e))
 
+@router.post("/patient_documents", response_model=dict)
+async def create_patient_document(
+    patient_id: str = Form(...),
+    document_type_id: int = Form(...),
+    document_description: Optional[str] = Form(None),
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db)
+):
+    """Upload a new patient document (alias for /documents/upload)"""
+    # This is an alias endpoint that calls the same logic as upload_document
+    return await upload_document(patient_id, document_type_id, document_description, file, db)
+
 @router.get("/documents/{document_id}/download")
 async def download_document(document_id: int, db: Session = Depends(get_db)):
     """Download a document file"""
@@ -283,6 +334,40 @@ async def delete_document(document_id: int, db: Session = Depends(get_db)):
         raise
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.delete("/patient_documents/{document_id}", response_model=dict)
+async def delete_patient_document(document_id: int, db: Session = Depends(get_db)):
+    """Delete a patient document (alias for /documents/{document_id})"""
+    # This is an alias endpoint that calls the same logic as delete_document
+    return await delete_document(document_id, db)
+
+@router.get("/patient_documents/{document_id}/thumbnail")
+async def get_patient_document_thumbnail(document_id: int, db: Session = Depends(get_db)):
+    """Get thumbnail for a patient document"""
+    try:
+        document = db.query(PatientDocuments).get(document_id)
+        if not document:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        # For now, return the original document as thumbnail
+        # In a real implementation, you'd generate actual thumbnails
+        docs_path = get_full_document_path()
+        file_path = os.path.join(docs_path, document.DocumentFilePath)
+        
+        if not os.path.exists(file_path):
+            raise HTTPException(status_code=404, detail="Document file not found")
+        
+        # Return the file as a streaming response
+        return FileResponse(
+            file_path,
+            media_type=document.MimeType or 'application/octet-stream',
+            filename=document.DocumentFileName
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/document_types", response_model=dict)

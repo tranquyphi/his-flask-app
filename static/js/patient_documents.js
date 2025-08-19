@@ -89,7 +89,7 @@ $(document).ready(function() {
     // Load documents data
     function loadDocumentsData() {
         return new Promise((resolve, reject) => {
-            $.ajax({
+            makeApiCall({
                 url: '/api/patient_documents',
                 method: 'GET',
                 success: function(response) {
@@ -111,7 +111,7 @@ $(document).ready(function() {
     // Load patients data
     function loadPatientsData() {
         return new Promise((resolve, reject) => {
-            $.ajax({
+            makeApiCall({
                 url: '/api/patients',
                 method: 'GET',
                 success: function(response) {
@@ -131,7 +131,7 @@ $(document).ready(function() {
     // Load document types data
     function loadDocumentTypesData() {
         return new Promise((resolve, reject) => {
-            $.ajax({
+            makeApiCall({
                 url: '/api/document_types',
                 method: 'GET',
                 success: function(response) {
@@ -572,7 +572,7 @@ $(document).ready(function() {
         // Hide the modal
         $('#deleteDocumentModal').modal('hide');
         
-        $.ajax({
+        makeApiCall({
             url: `/api/patient_documents/${documentId}`,
             method: 'DELETE',
             success: function(response) {

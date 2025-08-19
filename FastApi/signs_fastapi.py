@@ -18,30 +18,40 @@ router = APIRouter(prefix="/api", tags=["Signs"])
 
 @router.get("/signs", response_model=dict)
 async def get_all_signs(
+    q: Optional[str] = Query(None, description="Substring search in SignDesc"),
+    type: Optional[str] = Query(None, description="SignType filter: 0 or 1"),
     system_id: Optional[int] = Query(None, description="Filter by body system ID"),
+    speciality: Optional[str] = Query(None, description="Substring search in Speciality"),
     db: Session = Depends(get_db)
 ):
-    """Get all signs, optionally filtered by body system"""
+    """List signs with optional filters and search"""
     try:
-        query = db.query(Sign)
+        query = db.query(Sign, BodySystem.SystemName).join(BodySystem, Sign.SystemId == BodySystem.SystemId)
         
+        if q:
+            query = query.filter(Sign.SignDesc.ilike(f"%{q}%"))
+        if type in ('0', '1'):
+            query = query.filter(Sign.SignType == (type == '1'))
         if system_id:
             query = query.filter(Sign.SystemId == system_id)
+        if speciality:
+            query = query.filter(Sign.Speciality.ilike(f"%{speciality}%"))
         
-        signs = query.all()
-        result = []
+        records = query.order_by(Sign.SignDesc.asc()).all()
         
-        for sign in signs:
+        data = []
+        for sign, system_name in records:
             sign_dict = {
                 'SignId': sign.SignId,
                 'SignDesc': sign.SignDesc,
-                'SignType': sign.SignType,
+                'SignType': 1 if sign.SignType else 0,
                 'SystemId': sign.SystemId,
-                'Speciality': sign.Speciality
+                'Speciality': sign.Speciality,
+                'SystemName': system_name
             }
-            result.append(sign_dict)
+            data.append(sign_dict)
             
-        return {'signs': result}
+        return {'signs': data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -49,16 +59,21 @@ async def get_all_signs(
 async def get_sign(sign_id: int, db: Session = Depends(get_db)):
     """Get a specific sign by ID"""
     try:
-        sign = db.query(Sign).get(sign_id)
-        if not sign:
+        result = db.query(Sign, BodySystem.SystemName).join(
+            BodySystem, Sign.SystemId == BodySystem.SystemId
+        ).filter(Sign.SignId == sign_id).first()
+        
+        if not result:
             raise HTTPException(status_code=404, detail="Sign not found")
-            
+        
+        sign, system_name = result
         sign_dict = {
             'SignId': sign.SignId,
             'SignDesc': sign.SignDesc,
-            'SignType': sign.SignType,
+            'SignType': 1 if sign.SignType else 0,
             'SystemId': sign.SystemId,
-            'Speciality': sign.Speciality
+            'Speciality': sign.Speciality,
+            'SystemName': system_name
         }
         
         return {'sign': sign_dict}

@@ -5,8 +5,18 @@ Converted from Flask blueprint to FastAPI router
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from sqlalchemy.orm import Session
+from enum import Enum
+
+# Position enum to match database constraints
+class StaffPosition(str, Enum):
+    NV = "NV"      # Nhân viên (Staff)
+    TK = "TK"      # Tình nguyện (Volunteer)
+    PK = "PK"      # Phụ khoa (Assistant)
+    DDT = "DDT"    # Điều dưỡng trưởng (Head Nurse)
+    KTVT = "KTVT"  # Kỹ thuật viên (Technician)
+    KHAC = "KHAC"  # Khác (Other)
 from datetime import datetime
 
 # Import database models and session
@@ -37,6 +47,10 @@ class StaffUpdate(BaseModel):
     StaffRole: Optional[str] = None  
     StaffAvailable: Optional[bool] = None
 
+class DepartmentAssignment(BaseModel):
+    DepartmentId: int
+    Position: Optional[StaffPosition] = None
+
 @router.get("/staff", response_model=dict)
 async def get_all_staff(db: Session = Depends(get_db)):
     """Get all staff members with their current department"""
@@ -61,11 +75,13 @@ async def get_all_staff(db: Session = Depends(get_db)):
             
             if current_dept_assignment:
                 department = db.query(Department).get(current_dept_assignment.DepartmentId)
-                staff_dict['CurrentDepartmentId'] = department.DepartmentId if department else None
-                staff_dict['CurrentDepartmentName'] = department.DepartmentName if department else None
+                staff_dict['DepartmentId'] = department.DepartmentId if department else None
+                staff_dict['DepartmentName'] = department.DepartmentName if department else None  # Changed from CurrentDepartmentName
+                staff_dict['Position'] = current_dept_assignment.Position
             else:
-                staff_dict['CurrentDepartmentId'] = None
-                staff_dict['CurrentDepartmentName'] = None
+                staff_dict['DepartmentId'] = None
+                staff_dict['DepartmentName'] = None  # Changed from CurrentDepartmentName
+                staff_dict['Position'] = None
                 
             result.append(staff_dict)
             
@@ -97,11 +113,13 @@ async def get_staff(staff_id: int, db: Session = Depends(get_db)):
         
         if current_dept_assignment:
             department = db.query(Department).get(current_dept_assignment.DepartmentId)
-            staff_dict['CurrentDepartmentId'] = department.DepartmentId if department else None
-            staff_dict['CurrentDepartmentName'] = department.DepartmentName if department else None
+            staff_dict['DepartmentId'] = department.DepartmentId if department else None
+            staff_dict['DepartmentName'] = department.DepartmentName if department else None  # Changed from CurrentDepartmentName
+            staff_dict['Position'] = current_dept_assignment.Position
         else:
-            staff_dict['CurrentDepartmentId'] = None
-            staff_dict['CurrentDepartmentName'] = None
+            staff_dict['DepartmentId'] = None
+            staff_dict['DepartmentName'] = None  # Changed from CurrentDepartmentName
+            staff_dict['Position'] = None
             
         return {'staff': staff_dict}
     except HTTPException:
@@ -175,4 +193,92 @@ async def delete_staff(staff_id: int, db: Session = Depends(get_db)):
         raise  
     except Exception as e:
         db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/staff/{staff_id}/department", response_model=dict)
+async def assign_department(staff_id: int, assignment_data: DepartmentAssignment, db: Session = Depends(get_db)):
+    """Assign staff to a department"""
+    try:
+        # Check if staff exists
+        staff = db.query(Staff).get(staff_id)
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+            
+        # Check if department exists
+        department = db.query(Department).get(assignment_data.DepartmentId)
+        if not department:
+            raise HTTPException(status_code=404, detail="Department not found")
+            
+        # Get current assignment if any
+        current_assignment = db.query(StaffDepartment).filter_by(
+            StaffId=staff_id,
+            Current=True
+        ).first()
+        
+        # If there's a current assignment
+        if current_assignment:
+            # If department is the same, just update position if provided
+            if current_assignment.DepartmentId == assignment_data.DepartmentId:
+                if assignment_data.Position:
+                    current_assignment.Position = assignment_data.Position
+                    
+                db.commit()
+                return {
+                    'message': 'Department assignment updated successfully',
+                    'departmentId': assignment_data.DepartmentId,
+                    'departmentName': department.DepartmentName
+                }
+            else:
+                # Set current assignment to inactive
+                current_assignment.Current = False
+        
+        # Create new department assignment
+        new_assignment = StaffDepartment(
+            StaffId=staff_id,
+            DepartmentId=assignment_data.DepartmentId,
+            Position=assignment_data.Position,
+            Current=True
+        )
+        
+        db.add(new_assignment)
+        db.commit()
+        
+        return {
+            'message': 'Department assignment updated successfully',
+            'departmentId': assignment_data.DepartmentId,
+            'departmentName': department.DepartmentName
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/staff/{staff_id}/history", response_model=dict)
+async def get_staff_history(staff_id: int, db: Session = Depends(get_db)):
+    """Get department assignment history for a staff member"""
+    try:
+        # Check if staff exists
+        staff = db.query(Staff).get(staff_id)
+        if not staff:
+            raise HTTPException(status_code=404, detail="Staff not found")
+            
+        # Get all department assignments for this staff
+        assignments = db.query(StaffDepartment).filter_by(StaffId=staff_id).all()
+        
+        result = []
+        for assignment in assignments:
+            department = db.query(Department).get(assignment.DepartmentId)
+            result.append({
+                'StaffId': assignment.StaffId,
+                'DepartmentId': assignment.DepartmentId,
+                'DepartmentName': department.DepartmentName if department else None,
+                'Current': assignment.Current,
+                'Position': assignment.Position
+            })
+            
+        return {'history': result}
+    except HTTPException:
+        raise
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

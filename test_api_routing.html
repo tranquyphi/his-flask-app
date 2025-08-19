@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Routing Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="/static/js/api-config.js"></script>
+</head>
+<body>
+    <h1>API Routing Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        $(document).ready(function() {
+            console.log('Testing API routing...');
+            
+            // Test patient_documents (should go to Flask)
+            makeApiCall({
+                url: '/api/patient_documents',
+                method: 'GET',
+                success: function(data) {
+                    console.log('Patient documents success:', data);
+                    $('#results').append('<p>Patient documents: SUCCESS - ' + (data.patient_documents ? data.patient_documents.length : 0) + ' documents</p>');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Patient documents error:', error);
+                    $('#results').append('<p>Patient documents: ERROR - ' + error + '</p>');
+                }
+            });
+            
+            // Test patients (should go to FastAPI)
+            makeApiCall({
+                url: '/api/patients',
+                method: 'GET',
+                success: function(data) {
+                    console.log('Patients success:', data);
+                    $('#results').append('<p>Patients: SUCCESS - ' + (data.patients ? data.patients.length : 0) + ' patients</p>');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Patients error:', error);
+                    $('#results').append('<p>Patients: ERROR - ' + error + '</p>');
+                }
+            });
+            
+            // Test document_types (should go to Flask)
+            makeApiCall({
+                url: '/api/document_types',
+                method: 'GET',
+                success: function(data) {
+                    console.log('Document types success:', data);
+                    $('#results').append('<p>Document types: SUCCESS - ' + (data.document_types ? data.document_types.length : 0) + ' types</p>');
+                },
+                error: function(xhr, status, error) {
+                    console.error('Document types error:', error);
+                    $('#results').append('<p>Document types: ERROR - ' + error + '</p>');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
