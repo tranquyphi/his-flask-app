@@ -236,10 +236,15 @@ def patients_with_departments_page():
 
 
 # Staff documents management page
-@app.route('/staff-documents')
+app.route('/staff-documents')
 def staff_documents_page():
     """Page for managing staff documents"""
     return render_template('staff_documents.html')
+
+@app.route('/patient-documents')
+def patients_documents_page():
+    """Page for managing patients documents"""
+    return render_template('patient_documents.html')
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
