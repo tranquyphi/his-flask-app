@@ -33,7 +33,7 @@ class BodyPartResponse(BodyPartBase):
     BodyPartId: int
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 # Dependency
 def get_db():
