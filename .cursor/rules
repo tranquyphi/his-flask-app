@@ -14,14 +14,15 @@ Inputs and outputs
 - Default to concise bullets + targeted edits. Do not wrap entire messages in code blocks.
 - When citing code from the repo, include a small, relevant excerpt using file path formatting.
 
+
 Tooling and autonomy
 - You may read files, search the codebase, propose edits, and run non-interactive commands (lints/tests/build) when available.
-- Do NOT run destructive DB operations or apply migrations without stating assumptions and providing a rollback plan.
+- Do NOT run destructive DB operations or apply migrations without stating assumptions and providing a roll back plan.
 - Assume Flask API in Python with MariaDB; UI uses Jinja2 templates with DataTables; Ubuntu + nginx + gunicorn managed by systemd.
 
 Code and quality gates
 - Python: prefer 3.11+. If ruff/black/isort/mypy are configured, use them and require clean output before "done". If not configured, avoid style-only diffs.
-- Database: use Alembic for schema changes; enforce foreign keys, NOT NULL, and indexes where appropriate; prefer explicit transactional boundaries.
+- Database: direct SQL for schema changes; enforce foreign keys, NOT NULL, and indexes where appropriate; prefer explicit transactional boundaries.
 - API: consistent JSON envelopes, clear error semantics (HTTP status + error code/message), and pagination for DataTables server-side processing.
 
 Workflow
@@ -34,10 +35,10 @@ Error handling
 - Use non-interactive flags for commands. If something requires credentials or human decisions, pause and ask.
 
 Stack specifics
-- Flask entrypoint: `his.py` must expose `app`. Gunicorn: `gunicorn -c gunicorn.conf.py his:app`.
-- Systemd unit: `his.service` controls the app lifecycle.
-- nginx site: `his` in `sites-available` with symlink to `sites-enabled`, proxying to gunicorn (socket or port).
-- Frontend: DataTables; templates live in `templates/`, assets in `static/`. Prefer server-side processing for large tables.
+- Flask entrypoint: `his.py` must expose `app`. Gunicorn: `gunicorn -c gunicorn.conf.py his:app` (port 8000).
+- Systemd unit: `his.service` controls the app lifecycle (Gunicorn service on port 8000).
+- nginx site: `his` in `sites-available` with symlink to `sites-enabled`, proxying to gunicorn on 127.0.0.1:8000.
+- Frontend: DataTables; templates live in `frontend/`, assets in `static/`. Prefer server-side processing for large tables.
 
 Security and privacy
 - Treat patient data as sensitive: avoid logging PII/PHI; redact where necessary.
@@ -47,3 +48,43 @@ Rubric
 - Must: preserve data integrity, avoid breaking API contracts, no new lints/tests failures, minimal diff.
 - Should: clear naming, guard clauses, transactional writes, indexes for frequent queries.
 - Avoid: broad refactors, silent schema/API changes, formatting-only diffs.
+
+Efficiency Rules (Prevent Delays)
+- ALWAYS check existing routes/endpoints BEFORE making changes: `python3 -c "from his import app; [print(f'{rule.rule} -> {rule.endpoint}') for rule in app.url_map.iter_rules()]"`
+- ALWAYS verify database schema BEFORE API changes: check if required columns exist
+- ALWAYS test ONE endpoint at a time to isolate issues
+- NEVER restart services multiple times - fix all issues in one go
+- ALWAYS verify blueprint registration matches URL patterns in JavaScript
+- ALWAYS check for syntax errors: `python3 -m py_compile filename.py`
+- ALWAYS verify import paths and circular dependencies before blueprint changes
+- ALWAYS test API endpoints with `curl` before testing in browser
+- ALWAYS check service status: `sudo systemctl status his.service`
+- ALWAYS verify file paths match between API and frontend expectations
+- DELETE all temporary file, test file after successfully testing.
+- ALWAYS check `config.py` for database connection and environment settings before making DB changes
+- ALWAYS use `frontend/` directory for actual UI pages (not `templates/`)
+- ALWAYS use `/static/templates/` for base templates and reusable components (when implemented)
+- ALWAYS check `docs/db/ddl/` for database schema before making model changes
+- ALWAYS review DDL files to identify missing tables/columns before implementation
+- NEVER run DDL files in terminal - user manually adds missing schema elements
+
+# Folder Structure (User's Architecture)
+- `/frontend/` = Actual application UI pages (staff_documents.html, body_sites.html, index.html)
+- `/static/templates/` = Base templates, reusable components, samples (not yet implemented)
+- `/static/` = Assets (CSS, JS, images, document storage)
+- `/api/` = Flask API blueprints
+- `/models/` = SQLAlchemy models
+- This structure separates UI pages from reusable templates for better maintainability
+
+# Database Schema Documentation
+- Schema DDL files are stored in `docs/db/ddl/`
+- File names align with entities (e.g., `staff_documents` for Staff, StaffDocuments, DocumentType tables)
+- ALWAYS review DDL files before implementing model changes
+- Report missing tables/columns to user - they manually add schema elements
+- NEVER execute DDL files in terminal
+# Gunicorn Service Configuration
+- Service file: `his.service` (systemd service)
+- Port: 8000 (not conventional Flask 5000)
+- Gunicorn runs as nginx backend service
+- Bind: 127.0.0.1:8000 (localhost only, nginx proxies external requests)
+- Service management: `sudo systemctl restart/stop/status his.service`

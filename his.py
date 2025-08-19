@@ -28,7 +28,7 @@ from api.document_types import document_types_bp
 from api.patient_documents import patient_documents_bp
 from api.patients import patients_bp
 from api.staff import staff_bp
-from api.staff_documents import bp as staff_documents_api_bp
+from api.staff_documents import staff_documents_bp
 from api.patient_departments import patient_depts_bp
 
 config_name = 'development'
@@ -132,7 +132,7 @@ app.register_blueprint(document_types_bp, url_prefix='/api')
 app.register_blueprint(patient_documents_bp, url_prefix='/api')
 app.register_blueprint(patients_bp, url_prefix='/api')
 app.register_blueprint(staff_bp, url_prefix='/api')
-app.register_blueprint(staff_documents_api_bp)
+app.register_blueprint(staff_documents_bp, url_prefix='/api')
 app.register_blueprint(patient_depts_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
@@ -236,7 +236,7 @@ def patients_with_departments_page():
 
 
 # Staff documents management page
-app.route('/staff-documents')
+@app.route('/staff-documents')
 def staff_documents_page():
     """Page for managing staff documents"""
     return render_template('staff_documents.html')

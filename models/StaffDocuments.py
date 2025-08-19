@@ -28,6 +28,7 @@ class StaffDocuments(db.Model):
     document_links = db.Column(db.JSON, nullable=False, comment='Structured document links')
     document_metadata = db.Column(db.JSON, nullable=True, comment='Document metadata and properties')
     FileSize = db.Column(db.Integer, nullable=True)
+    file_type = db.Column(db.String(50), nullable=True, comment='File MIME type')
     UploadDate = db.Column(db.DateTime, default=db.func.current_timestamp())
     LastModified = db.Column(db.DateTime, default=db.func.current_timestamp())
     original_filename = db.Column(db.String(255), nullable=True, comment='Original file name')
@@ -49,6 +50,7 @@ class StaffDocuments(db.Model):
             'document_links': self.document_links,
             'document_metadata': self.document_metadata,
             'FileSize': self.FileSize,
+            'file_type': self.file_type,
             'UploadDate': self.UploadDate.strftime('%Y-%m-%d %H:%M:%S') if self.UploadDate else None,
             'LastModified': self.LastModified.strftime('%Y-%m-%d %H:%M:%S') if self.LastModified else None,
             'original_filename': self.original_filename,

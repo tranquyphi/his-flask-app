@@ -1,0 +1,56 @@
+[Unit]
+Description=Gunicorn instance to serve HIS Flask application
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=notify
+User=root
+Group=www-data
+WorkingDirectory=/root/his
+Environment="PATH=/root/his/venv/bin"
+
+# Database configuration
+Environment="DB_CONNECTION_STRING=mysql+pymysql://bvthanghoa:57PhanKeBinh@localhost/examdb"
+
+# Flask configuration
+Environment="FLASK_ENV=production"
+Environment="SECRET_KEY=your-production-secret-key-change-this"
+
+# Gunicorn configuration
+Environment="GUNICORN_WORKERS=4"
+Environment="GUNICORN_BIND=127.0.0.1:8000"
+Environment="GUNICORN_TIMEOUT=300"
+
+# Logging
+Environment="LOG_LEVEL=INFO"
+Environment="LOG_FILE=/var/log/his/his.log"
+
+# Performance tuning
+Environment="GUNICORN_WORKER_CLASS=sync"
+Environment="GUNICORN_MAX_REQUESTS=1000"
+Environment="GUNICORN_MAX_REQUESTS_JITTER=100"
+
+ExecStart=/root/his/venv/bin/gunicorn \
+    --workers ${GUNICORN_WORKERS} \
+    --bind ${GUNICORN_BIND} \
+    --timeout ${GUNICORN_TIMEOUT} \
+    --worker-class ${GUNICORN_WORKER_CLASS} \
+    --max-requests ${GUNICORN_MAX_REQUESTS} \
+    --max-requests-jitter ${GUNICORN_MAX_REQUESTS_JITTER} \
+    --access-logfile /var/log/his/access.log \
+    --error-logfile /var/log/his/error.log \
+    --log-level ${LOG_LEVEL} \
+    --preload \
+    his:app
+
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=5
+PrivateTmp=true
+
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
