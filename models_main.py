@@ -87,6 +87,25 @@ def create_app(config_name=None):
 # Database helper functions
 # ===========================================
 
+def get_db():
+    """
+    FastAPI dependency function to get database session
+    Yields a database session for use in FastAPI route handlers
+    """
+    from sqlalchemy.orm import sessionmaker
+    from sqlalchemy import create_engine
+    
+    # Create engine using the same database URL as Flask
+    db_url = os.getenv('DB_CONNECTION_STRING', 'mysql+pymysql://bvthanghoa:57PhanKeBinh@localhost/examdb')
+    engine = create_engine(db_url)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    
+    session = SessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
 def init_database(app):
     """Initialize database tables"""
     with app.app_context():
