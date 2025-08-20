@@ -3,8 +3,8 @@ Document Type API Blueprint
 CRUD operations for Document Type management
 """
 from flask import Blueprint, request, jsonify
-from models_main import db
-from models.DocumentType import DocumentType
+from models import db
+from models import DocumentType
 
 document_types_bp = Blueprint('document_types', __name__)
 

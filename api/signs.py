@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models_main import db
+from models import db
 from models import Sign, BodySystem
 
 signs_bp = Blueprint('signs', __name__)

@@ -2,7 +2,7 @@
 V2 API endpoints to resolve 404 errors in department_patients_specific
 """
 from flask import Blueprint, jsonify, request
-from models_main import db
+from models import db
 
 v2_bp = Blueprint('v2', __name__)
 

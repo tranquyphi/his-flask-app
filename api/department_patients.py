@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime
-from models_main import db
+from models import db
 from models import PatientDepartment, Patient, Department
 
 # Create Blueprint for department patients API routes
@@ -15,41 +15,29 @@ def get_department_patients(department_id):
         if not department:
             return jsonify({'error': 'Department not found'}), 404
         
-                # Query current patients in the department
-        results = (
-            db.session.query(
-                PatientDepartment.PatientId,
-                PatientDepartment.DepartmentId,
-                PatientDepartment.Current,
-                PatientDepartment.At,
-                Patient.PatientAge,
-                Patient.PatientAddress,
-                Patient.PatientGender,
-                Patient.PatientName,
-                Patient.PatientPhone,
-                Patient.PatientCCCD,
-                Patient.PatientBHYT,
-                Patient.PatientBHYTValid,
-                Patient.PatientRelative,
-                Patient.Allergy,
-                Patient.History,
-                Patient.PatientNote,
-                Department.DepartmentName,
-                Department.DepartmentType
-            )
-            .join(Patient, Patient.PatientId == PatientDepartment.PatientId)
-            .join(Department, Department.DepartmentId == PatientDepartment.DepartmentId)
-            .filter(
-                PatientDepartment.DepartmentId == department_id,
-                PatientDepartment.Current == True
-            )
-            .order_by(PatientDepartment.At.desc())
-            .all()
-        )
+        # Get patients for specific department
+        patients_data = db.session.query(
+            PatientDepartment.id,
+            PatientDepartment.PatientId,
+            PatientDepartment.DepartmentId,
+            PatientDepartment.Current,
+            PatientDepartment.At,
+            Patient.PatientName,
+            Patient.PatientGender,
+            Patient.PatientAge,
+            Department.DepartmentName
+        ).join(Patient, Patient.PatientId == PatientDepartment.PatientId)\
+         .join(Department, Department.DepartmentId == PatientDepartment.DepartmentId)\
+         .filter(
+            PatientDepartment.DepartmentId == department_id,
+            PatientDepartment.Current == True
+         )\
+         .order_by(PatientDepartment.At.desc())\
+         .all()
         
         # Convert results to dictionaries with proper formatting
         data = []
-        for r in results:
+        for r in patients_data:
             row_dict = dict(r._mapping)
             # Ensure datetime is serializable
             if row_dict.get('At'):
@@ -68,22 +56,6 @@ def get_department_patients(department_id):
         
     except Exception as e:
         print(f"Error in get_department_patients: {e}")
-        return jsonify({'error': f'Database error: {str(e)}'}), 500
-
-@dept_patients_bp.route('/departments', methods=['GET'])
-def get_all_departments():
-    """Get all departments for dropdown selection"""
-    try:
-        departments = Department.query.order_by(Department.DepartmentName).all()
-        return jsonify({
-            'departments': [{
-                'DepartmentId': dept.DepartmentId,
-                'DepartmentName': dept.DepartmentName,
-                'DepartmentType': dept.DepartmentType
-            } for dept in departments]
-        })
-    except Exception as e:
-        print(f"Error in get_all_departments: {e}")
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
 @dept_patients_bp.route('/department_stats/<int:department_id>', methods=['GET'])

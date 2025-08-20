@@ -3,10 +3,8 @@ Staff API endpoints
 """
 
 from flask import Blueprint, jsonify, request
-from models_main import db
-from models.Staff import Staff
-from models.Department import Department
-from models.StaffDepartment import StaffDepartment
+from models import db
+from models import Staff, Department, StaffDepartment
 from sqlalchemy import desc
 from datetime import datetime
 

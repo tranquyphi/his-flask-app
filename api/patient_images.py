@@ -1,5 +1,5 @@
 from flask import Blueprint, jsonify, send_file, Response, request
-from models_main import db
+from models import db
 from models import Patient
 import base64
 import io

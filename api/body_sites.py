@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify, render_template
-from models_main import db
+from models import db
 from models import BodySite, BodyPart
 
 body_sites_bp = Blueprint('body_sites', __name__)

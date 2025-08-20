@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request
 from datetime import datetime
-from models_main import db
+from models import db
 from models import PatientDepartment, Patient, Department
 
 # Create Blueprint for patient departments API routes

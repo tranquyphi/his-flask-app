@@ -3,8 +3,8 @@ Staff Documents API Blueprint
 CRUD operations for managing staff documents
 """
 from flask import Blueprint, request, jsonify, current_app, send_file
-from models_main import db
-from models.StaffDocuments import StaffDocuments, Staff, StaffDocumentType
+from models import db
+from models import StaffDocuments, Staff, DocumentType
 import os
 import json
 import uuid

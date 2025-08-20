@@ -3,9 +3,9 @@ Patient Documents API Blueprint
 CRUD operations for managing patient documents
 """
 from flask import Blueprint, request, jsonify, current_app, send_file
-from models_main import db, DOCUMENTS_PATH
+from models import db, DOCUMENTS_PATH
 from models import PatientDocuments, Patient
-from models.DocumentType import DocumentType
+from models import DocumentType
 import os
 import json
 import uuid

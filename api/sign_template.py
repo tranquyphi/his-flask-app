@@ -4,7 +4,7 @@ CRUD operations for Sign Templates
 """
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
-from models_main import db
+from models import db
 from models import SignTemplate, Department
 
 sign_template_bp = Blueprint('sign_template', __name__)
