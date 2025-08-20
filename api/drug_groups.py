@@ -4,35 +4,42 @@ CRUD operations for DrugGroup management
 """
 
 from flask import Blueprint, request, jsonify
-from sqlalchemy import asc
+from sqlalchemy import asc, func
 from models_main import db
-from models import DrugGroup
+from models import DrugGroup, Drug
 
 drug_groups_bp = Blueprint('drug_groups', __name__)
 
 
-def drug_group_to_dict(group):
-    """Convert DrugGroup to dictionary"""
+def drug_group_to_dict(group, drug_count=0):
+    """Convert DrugGroup to dictionary with drug count"""
     return {
         'DrugGroupId': group.DrugGroupId,
         'DrugGroupName': group.DrugGroupName,
-        'DrugGroupDescription': group.DrugGroupDescription
+        'DrugGroupDescription': group.DrugGroupDescription,
+        'drug_count': drug_count
     }
 
 
 @drug_groups_bp.route('/drug-groups', methods=['GET'])
 def list_drug_groups():
-    """List all drug groups with optional search"""
+    """List all drug groups with optional search and drug counts"""
     try:
-        query = db.session.query(DrugGroup)
+        # Query drug groups with drug counts
+        query = db.session.query(
+            DrugGroup,
+            func.count(Drug.DrugId).label('drug_count')
+        ).outerjoin(
+            Drug, DrugGroup.DrugGroupId == Drug.DrugGroupId
+        ).group_by(DrugGroup.DrugGroupId)
         
         # Search by name if provided
         search = request.args.get('q', type=str)
         if search:
             query = query.filter(DrugGroup.DrugGroupName.ilike(f"%{search}%"))
         
-        groups = query.order_by(asc(DrugGroup.DrugGroupName)).all()
-        data = [drug_group_to_dict(group) for group in groups]
+        results = query.order_by(asc(DrugGroup.DrugGroupName)).all()
+        data = [drug_group_to_dict(group, drug_count) for group, drug_count in results]
         return jsonify({'drug_groups': data})
     except Exception as e:
         db.session.rollback()

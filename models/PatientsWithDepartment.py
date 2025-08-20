@@ -57,7 +57,8 @@ class PatientsWithDepartment:
                     'History': patient.History,
                     'PatientNote': patient.PatientNote,
                     'CurrentDepartment': current_department,
-                    'AllDepartments': all_departments
+                    'AllDepartments': all_departments,
+                    'At': latest_assignment.At.isoformat() if latest_assignment and latest_assignment.At else None
                 }
                 result.append(patient_data)
             
@@ -107,7 +108,8 @@ class PatientsWithDepartment:
                     'History': patient.History,
                     'PatientNote': patient.PatientNote,
                     'CurrentDepartment': department_name,
-                    'AssignedDate': assignment.At.strftime('%Y-%m-%d %H:%M:%S') if assignment and assignment.At else None
+                    'AssignedDate': assignment.At.strftime('%Y-%m-%d %H:%M:%S') if assignment and assignment.At else None,
+                    'At': assignment.At.isoformat() if assignment and assignment.At else None
                 }
                 result.append(patient_data)
             

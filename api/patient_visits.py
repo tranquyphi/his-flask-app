@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime
 from sqlalchemy import desc, asc
 from models_main import db
-from models import Patient, Visit, Department, Staff, VisitDiagnosis
+from models import Patient, Visit, Department, Staff, VisitDiagnosis, PatientDepartment
 
 patient_visits_bp = Blueprint('patient_visits', __name__)
 
@@ -93,12 +93,47 @@ def get_patient_visits_summary(patient_id):
                 Department.DepartmentName,
                 db.func.count(Visit.VisitId).label('visit_count')
             )
-            .join(Visit, Visit.DepartmentId == Department.DepartmentId)
+            .join(Visit, Visit.DepartmentId == Visit.DepartmentId)
             .filter(Visit.PatientId == patient_id)
             .group_by(Department.DepartmentName)
             .order_by(desc('visit_count'))
             .all()
         )
+        
+        # Count unique departments from both visits and department assignments
+        # This ensures we count departments even if patient has no visits
+        all_dept_assignments = (
+            db.session.query(
+                Department.DepartmentName,
+                db.func.count(PatientDepartment.id).label('assignment_count')
+            )
+            .join(PatientDepartment, PatientDepartment.DepartmentId == Department.DepartmentId)
+            .filter(PatientDepartment.PatientId == patient_id)
+            .group_by(Department.DepartmentName)
+            .order_by(desc('assignment_count'))
+            .all()
+        )
+        
+        # Combine both sources to get unique departments
+        unique_departments = set()
+        dept_visits_dict = {}
+        
+        # Add departments from visits
+        for dept in dept_visits:
+            unique_departments.add(dept.DepartmentName)
+            dept_visits_dict[dept.DepartmentName] = dept.visit_count
+        
+        # Add departments from assignments
+        for dept in all_dept_assignments:
+            unique_departments.add(dept.DepartmentName)
+            if dept.DepartmentName not in dept_visits_dict:
+                dept_visits_dict[dept.DepartmentName] = 0
+        
+        # Create final department visits list
+        final_dept_visits = [
+            {'department': dept_name, 'count': dept_visits_dict.get(dept_name, 0)}
+            for dept_name in sorted(unique_departments, key=lambda x: dept_visits_dict.get(x, 0), reverse=True)
+        ]
         
         # Count visits by purpose
         purpose_visits = (
@@ -171,10 +206,7 @@ def get_patient_visits_summary(patient_id):
                     'department': latest_visit.DepartmentName if latest_visit else None
                 }
             },
-            'department_visits': [
-                {'department': dept.DepartmentName, 'count': dept.visit_count} 
-                for dept in dept_visits
-            ],
+            'department_visits': final_dept_visits,
             'purpose_visits': [
                 {'purpose': purpose.VisitPurpose, 'count': purpose.visit_count} 
                 for purpose in purpose_visits

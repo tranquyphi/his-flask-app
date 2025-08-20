@@ -314,7 +314,7 @@ $(document).ready(function() {
                 PatientNote: patient.PatientNote,
                 DepartmentName: patient.CurrentDepartment || 'Chưa phân khoa',
                 DepartmentId: null, // We don't have this in the transformed data
-                At: null, // We don't have admission date in this format
+                At: patient.At, // Now we have the admission date from the API
                 DaysAdmitted: 0 // Will be calculated later
             };
         });
@@ -340,7 +340,8 @@ $(document).ready(function() {
                 const admissionDate = new Date(patient.At);
                 const today = new Date();
                 const daysDiff = Math.floor((today - admissionDate) / (1000 * 60 * 60 * 24));
-                patient.DaysAdmitted = daysDiff;
+                // Add 1 to the calculated days to show actual days in hospital
+                patient.DaysAdmitted = daysDiff + 1;
             } else {
                 // For patients without admission date, show as "N/A"
                 patient.DaysAdmitted = null;

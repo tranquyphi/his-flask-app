@@ -8,6 +8,7 @@ db = models_main.db
 
 # Import models individually to avoid circular imports
 from models.DocumentType import DocumentType
+from models.PatientsWithDepartment import PatientsWithDepartment
 
 from api.department_patients import dept_patients_bp
 from api.body_sites import body_sites_bp
@@ -231,8 +232,8 @@ def test_patient_static():
 def excel_upload_page():
     return render_template('excel_upload.html')
 
-@app.route('/patients-with-departments')
-def patients_with_departments_page():
+@app.route('/patients-all')
+def patients_all_page():
     """Page showing all patients with their department information"""
     return render_template('department_patients_specific.html', department_id=None)
 

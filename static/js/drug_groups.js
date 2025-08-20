@@ -31,12 +31,13 @@ $(document).ready(function() {
                     }
                 },
                 { 
-                    data: null,
+                    data: 'drug_count',
                     render: function(data, type, row) {
-                        // TODO: Add drug count from drugs table
-                        return '<span class="badge bg-secondary">0</span>';
+                        const count = data || 0;
+                        const badgeClass = count > 0 ? 'bg-primary' : 'bg-secondary';
+                        return `<span class="badge ${badgeClass}">${count}</span>`;
                     },
-                    orderable: false,
+                    orderable: true,
                     searchable: false,
                     width: '100px'
                 },
