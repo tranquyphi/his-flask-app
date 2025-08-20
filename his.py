@@ -1,9 +1,13 @@
 from flask import Flask, jsonify, request, Blueprint, render_template
 from datetime import datetime
-from models import create_app, db
+import models_main
 
-# Import all models from consolidated file
-from models import *
+# Import all the necessary functions and classes from models_main
+create_app = models_main.create_app
+db = models_main.db
+
+# Import models individually to avoid circular imports
+from models.DocumentType import DocumentType
 
 from api.department_patients import dept_patients_bp
 from api.body_sites import body_sites_bp
