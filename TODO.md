@@ -13,37 +13,38 @@
 ### Service & Infrastructure
 - [x] Service running on port 8000
 - [x] Environment variables configured
-- [ ] Test service restart scenarios
+- [x] Test service restart scenarios
 - [ ] Verify log rotation works
-- [ ] Check nginx proxy configuration
+- [x ] Check nginx proxy configuration
 
 ## Medium Priority
 
 ### API & Endpoints
-- [ ] Review all API endpoints
+- [x ] Review all API endpoints
 - [ ] Test API functionality
 - [ ] Verify JSON response formats
 - [ ] Check error handling
 - [ ] Test pagination for DataTables
 
 ### Database & Models
-- [ ] Review database schema
+- [x ] Review database schema
 - [ ] Check model relationships
 - [ ] Verify foreign key constraints
 - [ ] Test database connections
 - [ ] Review DDL files in `docs/db/ddl/`
 - [ ] **IMPORTANT: Update junction table models to use surrogate primary keys**
-  - [ ] VisitDiagnosis: Add `id` primary key, make (VisitId, ICDCode) unique
-  - [ ] VisitTest: Add `id` primary key, make (VisitId, TestId) unique
-  - [ ] VisitDrug: Add `id` primary key, make (VisitId, DrugId) unique
-  - [ ] VisitProc: Add `id` primary key, make (VisitId, ProcId) unique
-  - [ ] VisitSign: Add `id` primary key, make (VisitId, SignId) unique
-  - [ ] VisitStaff: Add `id` primary key, make (VisitId, StaffId) unique
-  - [ ] StaffDepartment: Add `id` primary key, make (StaffId, DepartmentId) unique
-  - [ ] SignTemplateDetail: Add `id` primary key, make (SignTemplateId, SignId) unique
-  - [ ] DrugTemplateDetail: Already has `id` primary key
-  - [ ] TestTemplate: Already has `TestTemplateId` primary key
 
+  - [x] VisitDiagnosis: Add `id` primary key, make (VisitId, ICDCode) unique
+  - [x] VisitTest: Add `id` primary key, make (VisitId, TestId) unique
+  - [x] VisitDrug: Add `id` primary key, make (VisitId, DrugId) unique
+  - [x] VisitProc: Add `id` primary key, make (VisitId, ProcId) unique
+  - [x] VisitSign: Add `id` primary key, make (VisitId, SignId) unique
+  - [x] VisitStaff: Add `id` primary key, make (VisitId, StaffId) unique
+  - [x] StaffDepartment: Add `id` primary key, make (StaffId, DepartmentId) unique
+  - [x] SignTemplateDetail: Add `id` primary key, make (SignTemplateId, SignId) unique
+  - [x] DrugTemplateDetail: Already has `id` primary key
+  - [x] TestTemplate: Already has `TestTemplateId` primary key
+- [x] VisitDocument
 ### Frontend & UI
 - [ ] Test frontend pages
 - [ ] Verify DataTables integration

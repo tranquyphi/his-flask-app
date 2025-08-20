@@ -6,8 +6,39 @@ $(document).ready(function() {
     let patientsTable = null;
     let currentPatientId = null;
     
+    // Test API endpoint first to debug issues
+    testAPIEndpoints();
+    
     // Automatically load department data on page load
     loadDepartmentData();
+    
+    function testAPIEndpoints() {
+        console.log('Testing API endpoints...');
+        
+        // Test the patients_with_department endpoint
+        $.get('/api/patients_with_department')
+            .then(function(response) {
+                console.log('✅ /api/patients_with_department success:', response);
+            })
+            .catch(function(error) {
+                console.error('❌ /api/patients_with_department failed:', error);
+                if (error.responseJSON) {
+                    console.error('Error details:', error.responseJSON);
+                }
+            });
+        
+        // Test the departments endpoint
+        $.get('/api/departments')
+            .then(function(response) {
+                console.log('✅ /api/departments success:', response);
+            })
+            .catch(function(error) {
+                console.error('❌ /api/departments failed:', error);
+                if (error.responseJSON) {
+                    console.error('Error details:', error.responseJSON);
+                }
+            });
+    }
     
     // Handle image upload button click
     $('#upload-image-btn').on('click', function() {
@@ -32,12 +63,24 @@ $(document).ready(function() {
         }
     });
     
-    // Event handlers
-    $('#search-patient').on('keyup', function() {
-        if (patientsTable) {
-            patientsTable.search($(this).val()).draw();
-        }
-    });
+            // Event handlers
+        $('#search-patient').on('keyup', function() {
+            if (patientsTable) {
+                patientsTable.search($(this).val()).draw();
+            }
+        });
+        
+        // Department filter
+        $('#department-filter').on('change', function() {
+            if (patientsTable) {
+                const selectedDept = $(this).val();
+                if (selectedDept) {
+                    patientsTable.column(3).search(selectedDept).draw(); // Department column index
+                } else {
+                    patientsTable.column(3).search('').draw();
+                }
+            }
+        });
     
         // When the patient modal is hidden, refresh the table image
     $('#patientModal').on('hidden.bs.modal', function() {
@@ -66,8 +109,12 @@ $(document).ready(function() {
                     colIndex = 2; // Age column index
                     direction = 'asc';
                     break;
+                case 'DepartmentName':
+                    colIndex = 3; // Department column index
+                    direction = 'asc';
+                    break;
                 case 'DaysAdmitted': 
-                    colIndex = 3; // Days admitted column index
+                    colIndex = 4; // Days admitted column index (updated due to new department column)
                     direction = 'desc'; // Higher days first
                     break;
                 case 'At': 
@@ -93,25 +140,64 @@ $(document).ready(function() {
         // Show loading overlay
         $('#loading-overlay').show();
         
-        // Load department data and statistics
-        Promise.all([
-            $.get(`/api/department_patients/${DEPARTMENT_ID}`),
-            $.get(`/api/department_stats/${DEPARTMENT_ID}`)
-        ])
+        // Load data based on whether we're showing a specific department or all patients
+        let dataPromises;
+        if (DEPARTMENT_ID && DEPARTMENT_ID !== 'null') {
+            // Load specific department data
+            dataPromises = [
+                $.get(`/api/department_patients/${DEPARTMENT_ID}`),
+                $.get(`/api/department_stats/${DEPARTMENT_ID}`)
+            ];
+        } else {
+            // Load all patients with departments data
+            dataPromises = [
+                $.get('/api/patients_with_department'),
+                $.get('/api/departments') // For department names lookup
+            ];
+        }
+        
+        Promise.all(dataPromises)
         .then(function(responses) {
             const [patientsResponse, statsResponse] = responses;
             
             console.log('Patients data:', patientsResponse);
             console.log('Stats data:', statsResponse);
+            console.log('DEPARTMENT_ID:', DEPARTMENT_ID);
             
-            // Update department header
-            updateDepartmentHeader(patientsResponse.department);
+            // Check if we have valid responses
+            if (!patientsResponse) {
+                throw new Error('No patients data received');
+            }
             
-            // Update statistics
-            updateStatistics(statsResponse);
-            
-            // Initialize patients table
-            initializePatientsTable(patientsResponse.patients);
+            if (DEPARTMENT_ID && DEPARTMENT_ID !== 'null') {
+                // Specific department view
+                if (!patientsResponse.department) {
+                    throw new Error('Department information not found');
+                }
+                if (!patientsResponse.patients) {
+                    throw new Error('No patients found for this department');
+                }
+                
+                updateDepartmentHeader(patientsResponse.department);
+                updateStatistics(statsResponse);
+                initializePatientsTable(patientsResponse.patients);
+            } else {
+                // All patients view
+                if (!patientsResponse.patients_with_department) {
+                    throw new Error('No patients data available');
+                }
+                
+                updateDepartmentHeader({ DepartmentName: 'Tất cả bệnh nhân', DepartmentType: 'Tất cả khoa' });
+                updateStatistics({ current_patients: patientsResponse.patients_with_department.length, recent_admissions: 0, total_patients: patientsResponse.patients_with_department.length });
+                
+                // Transform the data structure to match what the table expects
+                const transformedPatients = transformPatientsData(patientsResponse.patients_with_department);
+                console.log('Transformed patients:', transformedPatients);
+                initializePatientsTable(transformedPatients, statsResponse.departments || []);
+                
+                // Populate department filter dropdown
+                populateDepartmentFilter(statsResponse.departments || []);
+            }
             
             // Update last updated time
             updateLastUpdated();
@@ -120,7 +206,8 @@ $(document).ready(function() {
             $('#loading-overlay').hide();
             
             // Show appropriate content
-            if (patientsResponse.patients.length === 0) {
+            const patients = DEPARTMENT_ID && DEPARTMENT_ID !== 'null' ? patientsResponse.patients : (patientsResponse.patients_with_department || []);
+            if (patients.length === 0) {
                 showEmptyState();
             } else {
                 showDataSections();
@@ -129,7 +216,17 @@ $(document).ready(function() {
         .catch(function(error) {
             console.error('Error loading department data:', error);
             $('#loading-overlay').hide();
-            showErrorState(error);
+            
+            // Show more detailed error information
+            if (error.responseJSON) {
+                console.error('API Error:', error.responseJSON);
+                showErrorState(error.responseJSON.error || 'API Error');
+            } else if (error.statusText) {
+                console.error('HTTP Error:', error.status, error.statusText);
+                showErrorState(`HTTP Error: ${error.status} - ${error.statusText}`);
+            } else {
+                showErrorState('Unknown error occurred');
+            }
         });
     }
     
@@ -149,13 +246,93 @@ $(document).ready(function() {
         $('#last-updated').text(now.toLocaleString('vi-VN'));
     }
     
-    function initializePatientsTable(patients) {
+    function populateDepartmentFilter(departments) {
+        const $filter = $('#department-filter');
+        $filter.empty();
+        $filter.append('<option value="">Tất cả khoa</option>');
+        
+        departments.forEach(dept => {
+            $filter.append(`<option value="${dept.DepartmentName}">${dept.DepartmentName}</option>`);
+        });
+    }
+    
+    function showErrorState(errorMessage) {
+        console.error('Showing error state:', errorMessage);
+        
+        // Hide other sections
+        $('#department-header').hide();
+        $('#stats-section').hide();
+        $('#search-section').hide();
+        $('#table-section').hide();
+        $('#empty-state').addClass('d-none');
+        
+        // Show error state
+        $('#error-state').removeClass('d-none');
+        $('#error-state .text-danger').text(errorMessage || 'An error occurred');
+        
+        // Hide loading overlay
+        $('#loading-overlay').hide();
+    }
+    
+    function showEmptyState() {
+        console.log('Showing empty state');
+        
+        // Hide other sections
+        $('#department-header').hide();
+        $('#stats-section').hide();
+        $('#search-section').hide();
+        $('#table-section').hide();
+        $('#error-state').addClass('d-none');
+        
+        // Show empty state
+        $('#empty-state').removeClass('d-none');
+    }
+    
+    function showDataSections() {
+        console.log('Showing data sections');
+        
+        // Show all sections
+        $('#department-header').show();
+        $('#stats-section').show();
+        $('#search-section').show();
+        $('#table-section').show();
+        $('#empty-state').addClass('d-none');
+        $('#error-state').addClass('d-none');
+    }
+    
+    function transformPatientsData(patients) {
+        return patients.map(patient => {
+            // Transform the data structure to match what the table expects
+            return {
+                PatientId: patient.PatientId,
+                PatientName: patient.PatientName,
+                PatientAge: patient.PatientAge,
+                PatientGender: patient.PatientGender,
+                PatientAddress: patient.PatientAddress,
+                Allergy: patient.Allergy,
+                History: patient.History,
+                PatientNote: patient.PatientNote,
+                DepartmentName: patient.CurrentDepartment || 'Chưa phân khoa',
+                DepartmentId: null, // We don't have this in the transformed data
+                At: null, // We don't have admission date in this format
+                DaysAdmitted: 0 // Will be calculated later
+            };
+        });
+    }
+    
+    function initializePatientsTable(patients, departments = []) {
         console.log('Initializing table with', patients.length, 'patients');
         
         // Destroy existing table if it exists
         if (patientsTable) {
             patientsTable.destroy();
         }
+        
+        // Create department lookup map
+        const departmentMap = {};
+        departments.forEach(dept => {
+            departmentMap[dept.DepartmentId] = dept.DepartmentName;
+        });
         
         // Calculate days since admission for each patient
         const processedPatients = patients.map(patient => {
@@ -165,7 +342,8 @@ $(document).ready(function() {
                 const daysDiff = Math.floor((today - admissionDate) / (1000 * 60 * 60 * 24));
                 patient.DaysAdmitted = daysDiff;
             } else {
-                patient.DaysAdmitted = 0;
+                // For patients without admission date, show as "N/A"
+                patient.DaysAdmitted = null;
             }
             return patient;
         });
@@ -234,11 +412,47 @@ $(document).ready(function() {
                     }
                 },
                 {
+                    data: 'DepartmentName',
+                    title: 'Khoa hiện tại',
+                    render: function(data, type, row) {
+                        if (type === 'sort' || type === 'type') {
+                            return data || '';
+                        }
+                        
+                        let deptName = data;
+                        if (!deptName && row.DepartmentId) {
+                            deptName = departmentMap[row.DepartmentId] || 'Không xác định';
+                        }
+                        
+                        if (!deptName) {
+                            return '<span class="badge bg-secondary">Chưa phân khoa</span>';
+                        }
+                        
+                        // Color code by department type
+                        let badgeClass = 'bg-primary';
+                        if (deptName.includes('Cấp cứu')) {
+                            badgeClass = 'bg-danger';
+                        } else if (deptName.includes('Nội trú')) {
+                            badgeClass = 'bg-success';
+                        } else if (deptName.includes('Phòng khám')) {
+                            badgeClass = 'bg-info';
+                        } else if (deptName.includes('CLS')) {
+                            badgeClass = 'bg-warning';
+                        }
+                        
+                        return `<span class="badge ${badgeClass}">${deptName}</span>`;
+                    }
+                },
+                {
                     data: 'DaysAdmitted',
                     title: 'Số ngày nằm',
                     render: function(data, type, row) {
                         if (type === 'sort' || type === 'type') {
                             return data || 0;
+                        }
+                        
+                        if (data === null || data === undefined) {
+                            return '<span class="badge bg-secondary">N/A</span>';
                         }
                         
                         let badgeClass = 'bg-success';

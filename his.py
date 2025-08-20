@@ -30,6 +30,7 @@ from api.patients import patients_bp
 from api.staff import staff_bp
 from api.staff_documents import staff_documents_bp
 from api.patient_departments import patient_depts_bp
+from api.departments import departments_bp
 
 config_name = 'development'
 app = create_app(config_name)
@@ -134,6 +135,7 @@ app.register_blueprint(patients_bp, url_prefix='/api')
 app.register_blueprint(staff_bp, url_prefix='/api')
 app.register_blueprint(staff_documents_bp, url_prefix='/api')
 app.register_blueprint(patient_depts_bp, url_prefix='/api')
+app.register_blueprint(departments_bp, url_prefix='/api')
 app.register_blueprint(v2_bp, url_prefix='/api/v2')
 
 # Add UI routes
@@ -232,7 +234,7 @@ def excel_upload_page():
 @app.route('/patients-with-departments')
 def patients_with_departments_page():
     """Page showing all patients with their department information"""
-    return render_template('patients_with_departments.html')
+    return render_template('department_patients_specific.html', department_id=None)
 
 
 # Staff documents management page

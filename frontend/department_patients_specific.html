@@ -281,10 +281,10 @@
                 <div class="col-lg-8">
                     <h1 class="mb-1">
                         <i class="fas fa-users-medical"></i> 
-                        <span id="department-name">Đang tải...</span>
+                        <span id="department-name">Tất cả bệnh nhân</span>
                     </h1>
                     <p class="mb-0 opacity-75">
-                        <span id="department-type">Loại khoa</span> • 
+                        <span id="department-type">Tất cả khoa</span> • 
                         Bệnh nhân đang nằm viện
                     </p>
                 </div>
@@ -292,6 +292,9 @@
                     <div class="btn-group">
                         <button class="btn btn-outline-light" onclick="refreshData()">
                             <i class="fas fa-sync"></i> Làm mới
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="debugData()">
+                            <i class="fas fa-bug"></i> Debug
                         </button>
                     </div>
                 </div>
@@ -331,20 +334,27 @@
 
         <!-- Search Controls -->
         <div class="row mb-3" id="search-section">
-            <div class="col-lg-6 col-md-8 mb-2">
+            <div class="col-lg-4 col-md-6 mb-2">
                 <label for="search-patient" class="form-label">Tìm kiếm bệnh nhân:</label>
                 <input type="text" id="search-patient" class="form-control" placeholder="Tìm theo tên hoặc mã...">
             </div>
-            <div class="col-lg-3 col-md-4 mb-2">
+            <div class="col-lg-3 col-md-3 mb-2">
+                <label for="department-filter" class="form-label">Lọc theo khoa:</label>
+                <select id="department-filter" class="form-select">
+                    <option value="">Tất cả khoa</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-3 mb-2">
                 <label for="sort-by" class="form-label">Sắp xếp theo:</label>
                 <select id="sort-by" class="form-select">
                     <option value="PatientName">Tên bệnh nhân</option>
                     <option value="PatientAge">Tuổi</option>
+                    <option value="DepartmentName">Khoa</option>
                     <option value="DaysAdmitted">Số ngày nằm</option>
                     <option value="At">Ngày vào khoa</option>
                 </select>
             </div>
-            <div class="col-lg-3 col-md-12 mb-2 d-flex align-items-end">
+            <div class="col-lg-2 col-md-12 mb-2 d-flex align-items-end">
                 <button id="export-data" class="btn btn-outline-success w-100">
                     <i class="fas fa-download"></i> Xuất Excel
                 </button>
@@ -375,6 +385,7 @@
                                         <th>Ảnh</th>
                                         <th>Họ tên</th>
                                         <th>Tuổi</th>
+                                        <th>Khoa hiện tại</th>
                                         <th>Số ngày nằm</th>
                                         <th>Thao tác</th>
                                     </tr>
@@ -641,7 +652,7 @@
     <!-- Custom JavaScript -->
     <script>
         // Pass department ID from Flask template to JavaScript
-        const DEPARTMENT_ID = {{ department_id }};
+        const DEPARTMENT_ID = {{ department_id if department_id else 'null' }};
         
         // Function to view patient visits
         function viewPatientVisits() {
@@ -657,6 +668,37 @@
             } else {
                 alert('Không thể xác định mã bệnh nhân');
             }
+        }
+        
+        // Global function for debugging (called from HTML)
+        function debugData() {
+            console.log('=== DEBUG DATA ===');
+            console.log('DEPARTMENT_ID:', DEPARTMENT_ID);
+            
+            // Test API endpoints again
+            console.log('Testing API endpoints...');
+            
+            $.get('/api/patients_with_department')
+                .then(function(response) {
+                    console.log('✅ /api/patients_with_department success:', response);
+                })
+                .catch(function(error) {
+                    console.error('❌ /api/patients_with_department failed:', error);
+                    if (error.responseJSON) {
+                        console.error('Error details:', error.responseJSON);
+                    }
+                });
+            
+            $.get('/api/departments')
+                .then(function(response) {
+                    console.log('✅ /api/departments success:', response);
+                })
+                .catch(function(error) {
+                    console.error('❌ /api/departments failed:', error);
+                    if (error.responseJSON) {
+                        console.error('Error details:', error.responseJSON);
+                    }
+                });
         }
     </script>
     <script src="{{ url_for('static', filename='js/department_patients_specific.js') }}?v={{ 'js/department_patients_specific.js' | static_version }}"></script>
