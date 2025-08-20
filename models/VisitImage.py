@@ -14,4 +14,8 @@ class VisitImage(db.Model):
     ImageData = db.Column(db.LargeBinary)
     ImageUrl = db.Column(db.String(255))
     Description = db.Column(db.String(255))
-    CreatedAt = db.Column(db.DateTime, default=datetime.utcnow)
+    CreatedAt = db.Column(db.DateTime, default=db.func.current_timestamp())
+    
+    def to_dict(self):
+        """Convert object to dictionary for JSON serialization"""
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}

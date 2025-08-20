@@ -8,8 +8,9 @@ from datetime import datetime
 class VisitDrug(db.Model):
     __tablename__ = 'VisitDrug'
     
-    VisitId = db.Column(db.BigInteger, db.ForeignKey('Visit.VisitId'), primary_key=True)
-    DrugId = db.Column(db.String(50), db.ForeignKey('Drug.DrugId'), primary_key=True)
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+    VisitId = db.Column(db.BigInteger, db.ForeignKey('Visit.VisitId'), nullable=False)
+    DrugId = db.Column(db.String(50), db.ForeignKey('Drug.DrugId'), nullable=False)
     DrugRoute = db.Column(db.String(100))
     DrugQuantity = db.Column(db.Float)
     DrugTimes = db.Column(db.String(100))
@@ -21,6 +22,7 @@ class VisitDrug(db.Model):
     def to_dict(self):
         """Convert VisitDrug to dictionary for JSON serialization"""
         return {
+            'id': self.id,
             'VisitId': self.VisitId,
             'DrugId': self.DrugId,
             'DrugRoute': self.DrugRoute,

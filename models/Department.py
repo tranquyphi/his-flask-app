@@ -9,7 +9,7 @@ class Department(db.Model):
     
     DepartmentId = db.Column(db.SmallInteger, primary_key=True)
     DepartmentName = db.Column(db.String(100))
-    DepartmentType = db.Column(db.String(50))  # Changed from Enum to String to allow any value
+    DepartmentType = db.Column(db.Enum('Nội trú','Cấp cứu','Phòng khám','CLS'))
     
     # Relationships
     staff_members = db.relationship('Staff', 

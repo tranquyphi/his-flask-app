@@ -19,3 +19,7 @@ class Test(db.Model):
     
     def __repr__(self):
         return f'<Test {self.TestName}>'
+        
+    def to_dict(self):
+        """Convert object to dictionary for JSON serialization"""
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}

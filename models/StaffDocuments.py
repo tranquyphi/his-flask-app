@@ -22,16 +22,16 @@ class StaffDocumentType(db.Model):
 
 class StaffDocuments(db.Model):
     __tablename__ = 'StaffDocuments'
-    DocumentId = db.Column(db.SmallInteger, primary_key=True, autoincrement=True)
     StaffId = db.Column(db.SmallInteger, db.ForeignKey('Staff.StaffId'), nullable=False)
-    DocumentTypeId = db.Column(db.SmallInteger, db.ForeignKey('StaffDocumentType.DocumentTypeId'), nullable=True)
-    document_links = db.Column(db.JSON, nullable=False, comment='Structured document links')
-    document_metadata = db.Column(db.JSON, nullable=True, comment='Document metadata and properties')
-    FileSize = db.Column(db.Integer, nullable=True)
-    file_type = db.Column(db.String(50), nullable=True, comment='File MIME type')
+    DocumentId = db.Column(db.SmallInteger, primary_key=True, autoincrement=True)
+    DocumentTypeId = db.Column(db.SmallInteger, db.ForeignKey('StaffDocumentType.DocumentTypeId'))
+    document_links = db.Column(db.JSON, nullable=False)
+    document_metadata = db.Column(db.JSON)
+    FileSize = db.Column(db.Integer)
+    file_type = db.Column(db.String(50))
     UploadDate = db.Column(db.DateTime, default=db.func.current_timestamp())
     LastModified = db.Column(db.DateTime, default=db.func.current_timestamp())
-    original_filename = db.Column(db.String(255), nullable=True, comment='Original file name')
+    original_filename = db.Column(db.String(255))
     last_modified = db.Column(db.DateTime, default=db.func.current_timestamp(), onupdate=db.func.current_timestamp())
 
     staff = db.relationship('Staff', backref='staff_documents', lazy=True)

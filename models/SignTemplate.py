@@ -11,3 +11,7 @@ class SignTemplate(db.Model):
     SignTemplateName = db.Column(db.String(100))
     DepartmentId = db.Column(db.SmallInteger, db.ForeignKey('Department.DepartmentId'))
     SignTemplateType = db.Column(db.Enum('BA', 'TD', 'PK', 'CC', name='sign_template_type'), default='TD')
+    
+    def to_dict(self):
+        """Convert object to dictionary for JSON serialization"""
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}

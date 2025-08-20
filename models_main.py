@@ -63,6 +63,7 @@ def create_app(config_name=None):
         from models.VisitTest import VisitTest
         # Template-related association models
         from models.TestTemplate import TestTemplate
+        from models.TestTemplateDetail import TestTemplateDetail
         from models.DrugTemplate import DrugTemplate
         from models.DrugTemplateDetail import DrugTemplateDetail
         from models.SignTemplate import SignTemplate
@@ -70,6 +71,9 @@ def create_app(config_name=None):
         # Document and service models
         from models.PatientDocuments import PatientDocuments
         from models.PatientsWithDepartment import PatientsWithDepartment
+        from models.StaffDocuments import StaffDocuments, StaffDocumentType
+        # Staff-related models
+        from models.StaffDepartment import StaffDepartment
     
     # Register static versioning filter for cache management
     try:

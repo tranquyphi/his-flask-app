@@ -13,7 +13,7 @@ from models_main import db
 class DocumentType(db.Model):
     __tablename__ = 'DocumentType'
     
-    DocumentTypeId = db.Column(db.Integer, primary_key=True)
+    DocumentTypeId = db.Column(db.SmallInteger, primary_key=True, autoincrement=True)
     DocumentTypeName = db.Column(db.String(25), nullable=False)
     
     # Relationships - will be defined when we import PatientDocuments

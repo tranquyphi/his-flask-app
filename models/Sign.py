@@ -15,3 +15,7 @@ class Sign(db.Model):
     
     def __repr__(self):
         return f'<Sign {self.SignDesc}>'
+        
+    def to_dict(self):
+        """Convert object to dictionary for JSON serialization"""
+        return {column.name: getattr(self, column.name) for column in self.__table__.columns}

@@ -1,15 +1,15 @@
 """
-SignTemplateDetail Model
+TestTemplateDetail Model
 """
 
 from models_main import db
 
-class SignTemplateDetail(db.Model):
-    __tablename__ = 'SignTemplateDetail'
+class TestTemplateDetail(db.Model):
+    __tablename__ = 'TestTemplateDetail'
     
     id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
-    SignTemplateId = db.Column(db.SmallInteger, db.ForeignKey('SignTemplate.SignTemplateId'), nullable=False)
-    SignId = db.Column(db.SmallInteger, db.ForeignKey('Sign.SignId'), nullable=False)
+    TestTemplateId = db.Column(db.SmallInteger, db.ForeignKey('TestTemplate.TestTemplateId'), nullable=False)
+    TestId = db.Column(db.String(50), db.ForeignKey('Test.TestId'), nullable=False)
     
     def to_dict(self):
         """Convert object to dictionary for JSON serialization"""

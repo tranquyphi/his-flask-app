@@ -29,3 +29,21 @@ class Patient(db.Model):
     
     def __repr__(self):
         return f'<Patient {self.PatientId}: {self.PatientName}>'
+        
+    def to_dict(self):
+        """Convert object to dictionary for JSON serialization"""
+        return {
+            'PatientId': self.PatientId,
+            'PatientName': self.PatientName,
+            'PatientGender': self.PatientGender,
+            'PatientAge': self.PatientAge,
+            'PatientAddress': self.PatientAddress,
+            'Allergy': self.Allergy,
+            'History': self.History,
+            'PatientNote': self.PatientNote,
+            'PatientPhone': self.PatientPhone,
+            'PatientCCCD': self.PatientCCCD,
+            'PatientBHYT': self.PatientBHYT,
+            'PatientBHYTValid': self.PatientBHYTValid,
+            'PatientRelative': self.PatientRelative
+        }

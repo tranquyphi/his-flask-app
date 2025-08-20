@@ -16,7 +16,7 @@ class Visit(db.Model):
         'Đột xuất', 'Hội chẩn', 'Xuất viện', 'Tái khám', 'Khám chuyên khoa',
         name='visit_purpose'
     ))
-    VisitTime = db.Column(db.DateTime)
+    VisitTime = db.Column(db.DateTime, default=db.func.current_timestamp())
     StaffId = db.Column(db.SmallInteger, db.ForeignKey('Staff.StaffId'), nullable=False)
     
     # Relationships

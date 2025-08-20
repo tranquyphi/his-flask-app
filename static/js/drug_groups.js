@@ -16,9 +16,9 @@ $(document).ready(function() {
     function initializeTable() {
         table = $('#drug-groups-table').DataTable({
             ajax: {
-                url: '/api/drug_group',
+                url: '/api/drug-groups',
                 type: 'GET',
-                dataSrc: 'drug_group'
+                dataSrc: 'drug_groups'
             },
             columns: [
                 { data: 'DrugGroupId', width: '80px' },
@@ -118,7 +118,7 @@ $(document).ready(function() {
             DrugGroupDescription: description || null
         };
         
-        const url = currentGroupId ? `/api/drug_group/${currentGroupId}` : '/api/drug_group';
+        const url = currentGroupId ? `/api/drug-groups/${currentGroupId}` : '/api/drug-groups';
         const method = currentGroupId ? 'PUT' : 'POST';
         
         $.ajax({
@@ -150,7 +150,7 @@ $(document).ready(function() {
     
     function confirmDelete() {
         $.ajax({
-            url: `/api/drug_group/${currentGroupId}`,
+            url: `/api/drug-groups/${currentGroupId}`,
             type: 'DELETE',
             success: function() {
                 $('#deleteModal').modal('hide');
