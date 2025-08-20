@@ -15,7 +15,7 @@ Environment="DB_CONNECTION_STRING=mysql+pymysql://bvthanghoa:57PhanKeBinh@localh
 
 # Flask configuration
 Environment="FLASK_ENV=production"
-Environment="SECRET_KEY=your-production-secret-key-change-this"
+Environment="SECRET_KEY=321216325c51cbfd5ef12175156358bce44114ebd60fe960740381c15e2e7e14"
 
 # Gunicorn configuration
 Environment="GUNICORN_WORKERS=4"
@@ -25,6 +25,13 @@ Environment="GUNICORN_TIMEOUT=300"
 # Logging
 Environment="LOG_LEVEL=INFO"
 Environment="LOG_FILE=/var/log/his/his.log"
+
+# Application configuration
+Environment="STATIC_VERSION=1.5"
+Environment="CORS_ORIGINS=http://localhost:3000,http://localhost:8000"
+Environment="ITEMS_PER_PAGE=20"
+Environment="MAX_CONTENT_LENGTH=26214400"
+Environment="SESSION_LIFETIME_HOURS=8"
 
 # Performance tuning
 Environment="GUNICORN_WORKER_CLASS=sync"
