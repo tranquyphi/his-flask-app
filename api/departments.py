@@ -6,7 +6,9 @@ CRUD operations for Department management
 from flask import Blueprint, request, jsonify
 from sqlalchemy import asc
 from models_main import db
-from models import Department, StaffDepartment, PatientDepartment
+from models import Department
+from models.StaffDepartment import StaffDepartment as StaffDepartmentModel
+from models.PatientDepartment import PatientDepartment as PatientDepartmentModel
 
 departments_bp = Blueprint('departments', __name__)
 
@@ -22,7 +24,7 @@ def department_to_dict(dept):
 
 @departments_bp.route('/departments', methods=['GET'])
 def list_departments():
-    """List all departments with optional search"""
+    """List all departments with optional search and counts"""
     try:
         query = db.session.query(Department)
         
@@ -37,7 +39,44 @@ def list_departments():
             query = query.filter(Department.DepartmentType == dept_type)
         
         departments = query.order_by(asc(Department.DepartmentName)).all()
-        data = [department_to_dict(dept) for dept in departments]
+        
+        # Get staff counts for filtered departments in one query
+        dept_ids = [dept.DepartmentId for dept in departments]
+        if dept_ids:
+            staff_counts = db.session.query(
+                StaffDepartmentModel.DepartmentId,
+                db.func.count(StaffDepartmentModel.StaffId).label('staff_count')
+            ).filter(
+                StaffDepartmentModel.DepartmentId.in_(dept_ids),
+                StaffDepartmentModel.Current == True
+            ).group_by(StaffDepartmentModel.DepartmentId).all()
+            
+            patient_counts = db.session.query(
+                PatientDepartmentModel.DepartmentId,
+                db.func.count(PatientDepartmentModel.PatientId).label('patient_count')
+            ).filter(
+                PatientDepartmentModel.DepartmentId.in_(dept_ids),
+                PatientDepartmentModel.Current == True
+            ).group_by(PatientDepartmentModel.DepartmentId).all()
+            
+            # Convert to dictionaries for easy lookup
+            staff_counts_dict = {dept_id: count for dept_id, count in staff_counts}
+            patient_counts_dict = {dept_id: count for dept_id, count in patient_counts}
+        else:
+            staff_counts_dict = {}
+            patient_counts_dict = {}
+        
+        # Build response with counts
+        data = []
+        for dept in departments:
+            dept_data = department_to_dict(dept)
+            dept_data.update({
+                'current_staff_count': staff_counts_dict.get(dept.DepartmentId, 0),
+                'current_patient_count': patient_counts_dict.get(dept.DepartmentId, 0),
+                'total_visits': len(dept.visits)
+            })
+            data.append(dept_data)
+        
         return jsonify({'departments': data})
     except Exception as e:
         db.session.rollback()
@@ -51,19 +90,19 @@ def get_department(dept_id):
         dept = Department.query.get_or_404(dept_id)
         
         # Get current staff count
-        current_staff = StaffDepartment.query.filter_by(
+        current_staff = db.session.query(StaffDepartmentModel).filter_by(
             DepartmentId=dept_id, 
             Current=True
         ).count()
         
         # Get current patient count
-        current_patients = PatientDepartment.query.filter_by(
+        current_patients = db.session.query(PatientDepartmentModel).filter_by(
             DepartmentId=dept_id, 
             Current=True
         ).count()
         
         # Get total visits
-        total_visits = dept.visits.count()
+        total_visits = len(dept.visits)
         
         result = department_to_dict(dept)
         result.update({
@@ -170,7 +209,7 @@ def delete_department(dept_id):
         dept = Department.query.get_or_404(dept_id)
         
         # Check if any staff are currently assigned to this department
-        current_staff = StaffDepartment.query.filter_by(
+        current_staff = db.session.query(StaffDepartmentModel).filter_by(
             DepartmentId=dept_id, 
             Current=True
         ).count()
@@ -206,7 +245,7 @@ def get_department_staff(dept_id):
     try:
         dept = Department.query.get_or_404(dept_id)
         
-        staff_assignments = StaffDepartment.query.filter_by(
+        staff_assignments = db.session.query(StaffDepartmentModel).filter_by(
             DepartmentId=dept_id,
             Current=True
         ).all()
@@ -231,13 +270,63 @@ def get_department_staff(dept_id):
         return jsonify({'error': str(e)}), 500
 
 
+@departments_bp.route('/departments/stats', methods=['GET'])
+def get_departments_stats():
+    """Get statistics for all departments in one query"""
+    try:
+        # Get all departments
+        departments = Department.query.order_by(Department.DepartmentName).all()
+        
+        # Get staff counts for all departments in one query
+        staff_counts = db.session.query(
+            StaffDepartmentModel.DepartmentId,
+            db.func.count(StaffDepartmentModel.StaffId).label('staff_count')
+        ).filter(
+            StaffDepartmentModel.Current == True
+        ).group_by(StaffDepartmentModel.DepartmentId).all()
+        
+        # Get patient counts for all departments in one query
+        patient_counts = db.session.query(
+            PatientDepartmentModel.DepartmentId,
+            db.func.count(PatientDepartmentModel.PatientId).label('patient_count')
+        ).filter(
+            PatientDepartmentModel.Current == True
+        ).group_by(PatientDepartmentModel.DepartmentId).all()
+        
+        # Convert to dictionaries for easy lookup
+        staff_counts_dict = {dept_id: count for dept_id, count in staff_counts}
+        patient_counts_dict = {dept_id: count for dept_id, count in patient_counts}
+        
+        # Build response with all statistics
+        departments_stats = []
+        for dept in departments:
+            dept_data = department_to_dict(dept)
+            dept_data.update({
+                'current_staff_count': staff_counts_dict.get(dept.DepartmentId, 0),
+                'current_patient_count': patient_counts_dict.get(dept.DepartmentId, 0),
+                'total_visits': len(dept.visits)
+            })
+            departments_stats.append(dept_data)
+        
+        return jsonify({
+            'departments': departments_stats,
+            'total_departments': len(departments),
+            'total_staff': sum(staff_counts_dict.values()),
+            'total_patients': sum(patient_counts_dict.values()),
+            'total_visits': sum(len(dept.visits) for dept in departments)
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+
 @departments_bp.route('/departments/<int:dept_id>/patients', methods=['GET'])
 def get_department_patients(dept_id):
     """Get all patients currently in a department"""
     try:
         dept = Department.query.get_or_404(dept_id)
         
-        patient_assignments = PatientDepartment.query.filter_by(
+        patient_assignments = db.session.query(PatientDepartmentModel).filter_by(
             DepartmentId=dept_id,
             Current=True
         ).all()

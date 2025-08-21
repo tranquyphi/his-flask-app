@@ -10,7 +10,7 @@ CREATE TABLE `BodyPart` (
 -- examdb.BodySystem definition
 
 CREATE TABLE `BodySystem` (
-  `SystemId` int NOT NULL,
+  `SystemId` int(1) NOT NULL,
   `SystemName` varchar(50) NOT NULL,
   PRIMARY KEY (`SystemId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -166,13 +166,13 @@ CREATE TABLE `DrugTemplate` (
 
 CREATE TABLE `DrugTemplateDetail` (
   `DrugTemplateId` smallint(6) DEFAULT NULL,
-  `DrugId` varchar(50) DEFAULT NULL,
+  `DrugId` varchar(20) DEFAULT NULL,
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`id`),
   KEY `DrugTemplateDetail_DrugTemplate_FK` (`DrugTemplateId`),
   KEY `DrugTemplateDetail_Drug_FK` (`DrugId`) USING BTREE,
   CONSTRAINT `DrugTemplateDetail_DrugTemplate_FK` FOREIGN KEY (`DrugTemplateId`) REFERENCES `DrugTemplate` (`DrugTemplateId`),
-  CONSTRAINT `DrugTemplateDetail_Drug_FK` FOREIGN KEY (`DrugId`) REFERENCES `Drug` (`DrugId`)
+  CONSTRAINT `DrugTemplateDetail_Sign_FK` FOREIGN KEY (`DrugId`) REFERENCES `Drug` (`DrugId`)
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
@@ -200,9 +200,9 @@ CREATE TABLE `PatientDepartment` (
 -- examdb.PatientDocuments definition
 
 CREATE TABLE `PatientDocuments` (
-  `PatientId` varchar(10) NOT NULL,
+  `PatientId` varchar(20) NOT NULL,
   `document_links` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'Structured document links' CHECK (json_valid(`document_links`)),
-  `document_metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Document metadata and properties',
+  `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Document metadata and properties' CHECK (json_valid(`metadata`)),
   `DocumentId` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
   `DocumentTypeId` tinyint(4) DEFAULT NULL,
   `FileType` varchar(50) DEFAULT NULL,
@@ -229,7 +229,7 @@ CREATE TABLE `Sign` (
   `SignId` smallint(6) NOT NULL AUTO_INCREMENT,
   `SignDesc` varchar(100) DEFAULT NULL,
   `SignType` tinyint(1) DEFAULT 0 COMMENT '0 nếu là dấu hiệu cơ năng, 1 nếu là dấu hiệu thực thể',
-  `SystemId` int NOT NULL,
+  `SystemId` int(1) NOT NULL,
   `Speciality` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`SignId`),
   KEY `SystemId` (`SystemId`),
@@ -256,13 +256,11 @@ CREATE TABLE `SignTemplate` (
 CREATE TABLE `SignTemplateDetail` (
   `SignTemplateId` smallint(6) DEFAULT NULL,
   `SignId` smallint(6) DEFAULT NULL,
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   KEY `SignTemplateDetail_SignTemplateId_IDX` (`SignTemplateId`,`SignId`) USING BTREE,
   KEY `SignTemplateDetail_Sign_FK` (`SignId`),
   CONSTRAINT `SignTemplateDetail_SignTemplate_FK` FOREIGN KEY (`SignTemplateId`) REFERENCES `SignTemplate` (`SignTemplateId`),
   CONSTRAINT `SignTemplateDetail_Sign_FK` FOREIGN KEY (`SignId`) REFERENCES `Sign` (`SignId`)
-) ENGINE=InnoDB AUTO_INCREMENT=21 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
 -- examdb.StaffDepartment definition
@@ -272,13 +270,11 @@ CREATE TABLE `StaffDepartment` (
   `DepartmentId` smallint(6) NOT NULL,
   `Current` tinyint(1) NOT NULL DEFAULT 1,
   `Position` enum('NV','TK','PK','DDT','KTVT','KHAC') DEFAULT 'NV',
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   KEY `StaffDepartment_Staff_FK` (`StaffId`),
   KEY `StaffDepartment_Department_FK` (`DepartmentId`),
   CONSTRAINT `StaffDepartment_Department_FK` FOREIGN KEY (`DepartmentId`) REFERENCES `Department` (`DepartmentId`),
   CONSTRAINT `StaffDepartment_Staff_FK` FOREIGN KEY (`StaffId`) REFERENCES `Staff` (`StaffId`)
-) ENGINE=InnoDB AUTO_INCREMENT=160 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
 -- examdb.StaffDocuments definition
@@ -341,11 +337,9 @@ CREATE TABLE `TestTemplate` (
 CREATE TABLE `TestTemplateDetail` (
   `TestTemplateId` smallint(6) DEFAULT NULL,
   `TestId` varchar(20) DEFAULT NULL,
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
-  KEY `TestTemplateDetail_Test_FK` (`TestId`),
+  KEY `TestTemplateDetail_Sign_FK` (`TestId`),
   KEY `TestTemplateDetail_TestTemplate_FK` (`TestTemplateId`),
-  CONSTRAINT `TestTemplateDetail_Test_FK` FOREIGN KEY (`TestId`) REFERENCES `Test` (`TestId`),
+  CONSTRAINT `TestTemplateDetail_Sign_FK` FOREIGN KEY (`TestId`) REFERENCES `Test` (`TestId`),
   CONSTRAINT `TestTemplateDetail_TestTemplate_FK` FOREIGN KEY (`TestTemplateId`) REFERENCES `TestTemplate` (`TestTemplateId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
@@ -377,8 +371,6 @@ CREATE TABLE `VisitDiagnosis` (
   `ICDCode` varchar(10) DEFAULT NULL COMMENT 'mã ICD chẩn đoán',
   `ActualDiagnosis` varchar(255) DEFAULT NULL COMMENT 'Chẩn đoán thực tế',
   `DiseaseType` enum('Bệnh chính','Bệnh kèm','Biến chứng') DEFAULT NULL,
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `VisitDiagnosis_Visit` (`VisitId`,`ICDCode`),
   KEY `VisitDiagnosis_ICD_FK` (`ICDCode`),
   CONSTRAINT `VisitDiagnosis_ICD_FK` FOREIGN KEY (`ICDCode`) REFERENCES `ICD` (`ICDCode`),
@@ -392,10 +384,8 @@ CREATE TABLE `VisitDocuments` (
   `VisitId` bigint(20) NOT NULL,
   `document_links` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'Structured document links' CHECK (json_valid(`document_links`)),
   `metadata` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT 'Document metadata and properties' CHECK (json_valid(`metadata`)),
-  `DocumentId` smallint(5) unsigned DEFAULT NULL,
+  `DocumentId` smallint(5) unsigned AUTO_INCREMENT,
   `DocumentTypeId` tinyint(4) NOT NULL,
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   KEY `VisitDocuments_Visit_FK` (`VisitId`),
   KEY `VisitDocuments_DocumentId_IDX` (`DocumentId`,`VisitId`) USING BTREE,
   KEY `VisitDocuments_DocumentType_FK` (`DocumentTypeId`),
@@ -416,8 +406,6 @@ CREATE TABLE `VisitDrug` (
   `Note` varchar(100) DEFAULT NULL,
   `DrugStatus` enum('CD','TH','XONG') DEFAULT 'CD',
   `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)',
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `Visit_VisitDrug` (`DrugId`,`VisitId`),
   KEY `VisitId` (`VisitId`),
   CONSTRAINT `VisitDrug_ibfk_1` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`),
@@ -450,8 +438,6 @@ CREATE TABLE `VisitProc` (
   `ProcStaffId` smallint(6) DEFAULT NULL COMMENT 'Nhân viên thực hiện thủ thuật',
   `ProcTime` datetime DEFAULT NULL COMMENT 'Thời gian thực hiện',
   `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)',
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `Visit_VisitProc` (`ProcId`,`VisitId`),
   KEY `VisitId` (`VisitId`),
   KEY `ProcStaffId` (`ProcStaffId`),
@@ -471,12 +457,10 @@ CREATE TABLE `VisitSign` (
   `Section` enum('toàn bộ','1/3','1/4','1/5') DEFAULT NULL COMMENT 'Vị trí của dấu hiệu',
   `UpperLower` enum('trên','dưới','giữa') DEFAULT NULL COMMENT 'Vị trí của dấu hiệu',
   `FrontBack` enum('mặt trước','mặt sau','mặt trong','mặt ngoài') DEFAULT NULL COMMENT 'Vị trí của dấu hiệu',
-  `SignValue` enum('BT','Có DHBL','Có','Không','Ít','Vừa','Nhiều','Nhẹ','Tăng','Giảm','Như cũ') DEFAULT 'BT' COMMENT 'Giá trị của dấu hiệu',
+  `SignValue` enum('','BT','Có DHBL','Có','Không','Ít','Vừa','Nhiều','Nhẹ','Tăng','Giảm','Như cũ') DEFAULT NULL COMMENT 'Giá trị của dấu hiệu',
   `FollowUp` tinyint(1) DEFAULT 0,
   `ForEmr` tinyint(1) DEFAULT 0,
   `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)',
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `Visit_VisitSign` (`SignId`,`VisitId`),
   KEY `VisitId` (`VisitId`),
   KEY `BodySiteId` (`BodySiteId`),
@@ -491,8 +475,6 @@ CREATE TABLE `VisitSign` (
 CREATE TABLE `VisitStaff` (
   `VisitId` bigint(20) NOT NULL,
   `StaffId` smallint(6) NOT NULL,
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `Visit_VisitStaff` (`StaffId`,`VisitId`),
   KEY `VisitId` (`VisitId`),
   CONSTRAINT `VisitStaff_ibfk_1` FOREIGN KEY (`VisitId`) REFERENCES `Visit` (`VisitId`),
@@ -511,8 +493,6 @@ CREATE TABLE `VisitTest` (
   `TestResult` varchar(255) DEFAULT NULL COMMENT 'Kết quả',
   `TestConclusion` varchar(20) DEFAULT NULL,
   `IsCustom` tinyint(1) DEFAULT 0 COMMENT '1 nếu bác sĩ tự thêm (không từ template)',
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  PRIMARY KEY (`id`),
   UNIQUE KEY `Visit_VisitTest` (`TestId`,`VisitId`),
   KEY `VisitId` (`VisitId`),
   KEY `TestStaffId` (`TestStaffId`),

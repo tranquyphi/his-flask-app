@@ -97,3 +97,8 @@ Efficiency Rules (Prevent Delays)
 # Debug
 1) If the task you do is done. Say simply "Done", don't explain what you did.
 2) I restart the service (the app) to test for myself. If ok I say "OK",if not I say "Not OK" but don't debug automatically except I told you. I debug for myself and send you the log if needed. 
+# Statistics API
+Create the separated API route to count
+- When counts or statistics are needed, use separate API routes instead of embedding count logic in main data routes
+- Separate routes provide better performance, maintainability, and reusability
+- Examples: `/api/departments/stats` for department statistics, `/api/visits/stats` for visit statistics

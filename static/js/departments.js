@@ -67,51 +67,43 @@ $(document).ready(function() {
 
     // Load department statistics
     function loadStatistics() {
+        console.log('Loading statistics...');
         $.ajax({
-            url: '/api/departments',
+            url: '/api/departments/stats',
             method: 'GET',
             success: function(response) {
+                console.log('Departments stats response:', response);
                 const departments = response.departments || [];
-                $('#totalDepartments').text(departments.length);
                 
-                // Calculate totals from all departments
-                let totalStaff = 0;
-                let totalPatients = 0;
-                let totalVisits = 0;
+                // Update statistics display
+                $('#totalDepartments').text(response.total_departments || departments.length);
+                $('#totalStaff').text(response.total_staff || 0);
+                $('#totalPatients').text(response.total_patients || 0);
+                $('#totalVisits').text(response.total_visits || 0);
                 
-                // Load detailed stats for each department
-                departments.forEach(function(dept) {
-                    $.ajax({
-                        url: `/api/departments/${dept.DepartmentId}`,
-                        method: 'GET',
-                        success: function(deptResponse) {
-                            const deptData = deptResponse.department;
-                            totalStaff += deptData.current_staff_count || 0;
-                            totalPatients += deptData.current_patient_count || 0;
-                            totalVisits += deptData.total_visits || 0;
-                            
-                            // Update table with real data
-                            const row = departmentsTable.row(`[data-id="${dept.DepartmentId}"]`);
-                            if (row.length) {
-                                row.data().current_staff_count = deptData.current_staff_count || 0;
-                                row.data().current_patient_count = deptData.current_patient_count || 0;
-                                row.data().total_visits = deptData.total_visits || 0;
-                                departmentsTable.draw();
-                            }
-                            
-                            // Update statistics display
-                            $('#totalStaff').text(totalStaff);
-                            $('#totalPatients').text(totalPatients);
-                            $('#totalVisits').text(totalVisits);
-                        },
-                        error: function() {
-                            console.log(`Failed to load stats for department ${dept.DepartmentId}`);
-                        }
-                    });
-                });
+                // Update table with complete data including counts
+                departmentsTable.clear().rows.add(departments).draw();
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('Failed to load department statistics:', error);
                 showError('Failed to load department statistics');
+                
+                // Fallback to basic departments API if stats endpoint fails
+                $.ajax({
+                    url: '/api/departments',
+                    method: 'GET',
+                    success: function(fallbackResponse) {
+                        const departments = fallbackResponse.departments || [];
+                        $('#totalDepartments').text(departments.length);
+                        $('#totalStaff').text('-');
+                        $('#totalPatients').text('-');
+                        $('#totalVisits').text('-');
+                        departmentsTable.clear().rows.add(departments).draw();
+                    },
+                    error: function() {
+                        showError('Failed to load departments');
+                    }
+                });
             }
         });
     }
@@ -330,6 +322,12 @@ $(document).ready(function() {
         }
     }
 
-    // Initialize page
+    // Initialize page - load statistics after table is ready
+    departmentsTable.on('xhr.dt', function() {
+        // This event fires when the DataTable finishes loading data
+        loadStatistics();
+    });
+    
+    // Also load statistics immediately in case table is already loaded
     loadStatistics();
 });

@@ -17,6 +17,7 @@ from .Proc import Proc
 from .PatientDepartment import PatientDepartment
 from .Sign import Sign
 from .Staff import Staff
+from .StaffDepartment import StaffDepartment
 from .Template import Template
 from .Test import Test
 from .Visit import Visit
@@ -47,7 +48,7 @@ __all__ = [
     # Core models
     'DocumentType', 'BodyPart', 'BodySite', 'BodySystem', 'Department',
     'DrugGroup', 'Drug', 'ICD', 'Patient', 'Proc', 'PatientDepartment',
-    'Sign', 'Staff', 'Template', 'Test', 'Visit',
+    'Sign', 'Staff', 'StaffDepartment', 'Template', 'Test', 'Visit',
     
     # Visit-related association models
     'VisitDiagnosis', 'VisitDocuments', 'VisitImage', 'VisitDrug', 
