@@ -3,8 +3,8 @@
 # Get current branch name
 current_branch=$(git branch --show-current)
 
-# Get current timestamp
-current_time=$(date '+%Y-%m-%d %H:%M:%S')
+# Get current timestamp in GMT+7
+current_time=$(TZ='Asia/Bangkok' date '+%Y-%m-%d %H:%M:%S')
 
 # Create commit message
 commit_message="${current_branch} - ${current_time}"
