@@ -86,6 +86,47 @@ def get_all_departments():
         print(f"Error in get_all_departments: {e}")
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
+@dept_patients_bp.route('/departments/stats', methods=['GET'])
+def get_all_departments_stats():
+    """Get all departments with their statistics"""
+    try:
+        from models import Visit, StaffDepartment, PatientDepartment
+        
+        departments = Department.query.order_by(Department.DepartmentName).all()
+        result = []
+        
+        for dept in departments:
+            # Count current staff
+            current_staff = db.session.query(StaffDepartment).filter_by(
+                DepartmentId=dept.DepartmentId,
+                Current=True
+            ).count()
+            
+            # Count current patients
+            current_patients = db.session.query(PatientDepartment).filter_by(
+                DepartmentId=dept.DepartmentId,
+                Current=True
+            ).count()
+            
+            # Count total visits
+            total_visits = db.session.query(Visit).filter_by(
+                DepartmentId=dept.DepartmentId
+            ).count()
+            
+            result.append({
+                'DepartmentId': dept.DepartmentId,
+                'DepartmentName': dept.DepartmentName,
+                'DepartmentType': dept.DepartmentType,
+                'CurrentStaff': current_staff,
+                'CurrentPatients': current_patients,
+                'TotalVisits': total_visits
+            })
+        
+        return jsonify({'departments': result})
+    except Exception as e:
+        print(f"Error in get_all_departments_stats: {e}")
+        return jsonify({'error': f'Database error: {str(e)}'}), 500
+
 @dept_patients_bp.route('/department_stats/<int:department_id>', methods=['GET'])
 def get_department_stats(department_id):
     """Get statistics for a specific department"""

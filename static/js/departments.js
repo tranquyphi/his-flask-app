@@ -2,7 +2,7 @@ $(document).ready(function() {
     // Initialize DataTable
     const departmentsTable = $('#departmentsTable').DataTable({
         ajax: {
-            url: '/api/departments',
+            url: '/api/departments/stats',
             dataSrc: 'departments'
         },
         columns: [
@@ -10,24 +10,21 @@ $(document).ready(function() {
             { data: 'DepartmentName' },
             { data: 'DepartmentType' },
             { 
-                data: null,
+                data: 'CurrentStaff',
                 render: function(data, type, row) {
-                    const count = row.current_staff_count || 0;
-                    return `<span class="badge bg-info">${count}</span>`;
+                    return `<span class="badge bg-info">${data || 0}</span>`;
                 }
             },
             { 
-                data: null,
+                data: 'CurrentPatients',
                 render: function(data, type, row) {
-                    const count = row.current_patient_count || 0;
-                    return `<span class="badge bg-warning">${count}</span>`;
+                    return `<span class="badge bg-warning">${data || 0}</span>`;
                 }
             },
             { 
-                data: null,
+                data: 'TotalVisits',
                 render: function(data, type, row) {
-                    const count = row.total_visits || 0;
-                    return `<span class="badge bg-secondary">${count}</span>`;
+                    return `<span class="badge bg-secondary">${data || 0}</span>`;
                 }
             },
             {
@@ -62,50 +59,27 @@ $(document).ready(function() {
                 next: "Next",
                 previous: "Previous"
             }
+        },
+        initComplete: function(settings, json) {
+            // Update statistics display when table data is loaded
+            updateStatisticsDisplay(json.departments || []);
         }
     });
 
-    // Load department statistics
-    function loadStatistics() {
-        console.log('Loading statistics...');
-        $.ajax({
-            url: '/api/departments/stats',
-            method: 'GET',
-            success: function(response) {
-                console.log('Departments stats response:', response);
-                const departments = response.departments || [];
-                
-                // Update statistics display
-                $('#totalDepartments').text(response.total_departments || departments.length);
-                $('#totalStaff').text(response.total_staff || 0);
-                $('#totalPatients').text(response.total_patients || 0);
-                $('#totalVisits').text(response.total_visits || 0);
-                
-                // Update table with complete data including counts
-                departmentsTable.clear().rows.add(departments).draw();
-            },
-            error: function(xhr, status, error) {
-                console.error('Failed to load department statistics:', error);
-                showError('Failed to load department statistics');
-                
-                // Fallback to basic departments API if stats endpoint fails
-                $.ajax({
-                    url: '/api/departments',
-                    method: 'GET',
-                    success: function(fallbackResponse) {
-                        const departments = fallbackResponse.departments || [];
-                        $('#totalDepartments').text(departments.length);
-                        $('#totalStaff').text('-');
-                        $('#totalPatients').text('-');
-                        $('#totalVisits').text('-');
-                        departmentsTable.clear().rows.add(departments).draw();
-                    },
-                    error: function() {
-                        showError('Failed to load departments');
-                    }
-                });
-            }
-        });
+
+
+    // Update statistics display
+    function updateStatisticsDisplay(departments) {
+        // Calculate totals from departments data
+        const totalStaff = departments.reduce((sum, dept) => sum + (dept.CurrentStaff || 0), 0);
+        const totalPatients = departments.reduce((sum, dept) => sum + (dept.CurrentPatients || 0), 0);
+        const totalVisits = departments.reduce((sum, dept) => sum + (dept.TotalVisits || 0), 0);
+        
+        // Update statistics display
+        $('#totalDepartments').text(departments.length);
+        $('#totalStaff').text(totalStaff);
+        $('#totalPatients').text(totalPatients);
+        $('#totalVisits').text(totalVisits);
     }
 
     // Search functionality
@@ -235,7 +209,6 @@ $(document).ready(function() {
             success: function(response) {
                 $('#departmentModal').modal('hide');
                 departmentsTable.ajax.reload();
-                loadStatistics();
                 showSuccess(deptId ? 'Department updated successfully' : 'Department created successfully');
             },
             error: function(xhr) {
@@ -257,7 +230,6 @@ $(document).ready(function() {
             success: function() {
                 $('#deleteModal').modal('hide');
                 departmentsTable.ajax.reload();
-                loadStatistics();
                 showSuccess('Department deleted successfully');
             },
             error: function(xhr) {
@@ -300,9 +272,9 @@ $(document).ready(function() {
                 row.DepartmentId,
                 `"${row.DepartmentName}"`,
                 row.DepartmentType,
-                row.current_staff_count || 0,
-                row.current_patient_count || 0,
-                row.total_visits || 0
+                row.CurrentStaff || 0,
+                row.CurrentPatients || 0,
+                row.TotalVisits || 0
             ].join(','))
         ].join('\n');
         return csvContent;
@@ -322,12 +294,5 @@ $(document).ready(function() {
         }
     }
 
-    // Initialize page - load statistics after table is ready
-    departmentsTable.on('xhr.dt', function() {
-        // This event fires when the DataTable finishes loading data
-        loadStatistics();
-    });
-    
-    // Also load statistics immediately in case table is already loaded
-    loadStatistics();
+
 });
