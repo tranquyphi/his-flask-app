@@ -263,3 +263,4 @@ def get_department_patients(dept_id):
         return jsonify({'error': str(e)}), 500
 
 
+

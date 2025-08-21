@@ -356,10 +356,9 @@
                 <form id="addVisitForm">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="visitDepartment" class="form-label">Khoa điều trị *</label>
-                            <select class="form-select" id="visitDepartment" required>
-                                <option value="">Chọn khoa...</option>
-                            </select>
+                            <label for="visitDepartment" class="form-label">Khoa điều trị</label>
+                            <input type="text" class="form-control" id="visitDepartmentDisplay" readonly>
+                            <input type="hidden" id="visitDepartment" required>
                         </div>
                         <div class="mb-3">
                             <label for="visitStaff" class="form-label">Bác sĩ *</label>
@@ -521,13 +520,8 @@
 
             // Add visit modal
             $('#addVisitBtn').on('click', function() {
-                loadDepartments();
+                loadPatientCurrentDepartment();
                 $('#addVisitModal').modal('show');
-            });
-
-            // Department change in modal
-            $('#visitDepartment').on('change', function() {
-                loadStaffByDepartment($(this).val());
             });
 
             // Add visit form submission
@@ -735,20 +729,25 @@
             container.html(html);
         }
 
-        function loadDepartments() {
+        function loadPatientCurrentDepartment() {
             $.ajax({
-                url: '/api/departments',
+                url: `/api/patients/${currentPatientId}/departments`,
                 method: 'GET',
                 success: function(response) {
-                    const departments = response.departments || [];
-                    let options = '<option value="">Chọn khoa...</option>';
-                    departments.forEach(dept => {
-                        options += `<option value="${dept.DepartmentId}">${dept.DepartmentName}</option>`;
-                    });
-                    $('#visitDepartment').html(options);
+                    const currentDept = response.departments?.find(dept => dept.Current === true);
+                    if (currentDept) {
+                        $('#visitDepartment').val(currentDept.DepartmentId);
+                        $('#visitDepartmentDisplay').val(currentDept.DepartmentName);
+                        loadStaffByDepartment(currentDept.DepartmentId);
+                    } else {
+                        showError('Bệnh nhân chưa được phân công khoa');
+                        $('#addVisitModal').modal('hide');
+                    }
                 },
                 error: function(xhr) {
-                    console.error('Error loading departments:', xhr);
+                    console.error('Error loading patient departments:', xhr);
+                    showError('Không thể tải thông tin khoa của bệnh nhân');
+                    $('#addVisitModal').modal('hide');
                 }
             });
         }

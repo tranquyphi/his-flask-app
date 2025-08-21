@@ -16,10 +16,17 @@ staff_bp = Blueprint('staff_bp', __name__)
 def get_all_staff():
     """Get all staff members with their current department"""
     try:
+        # Get query parameters
+        department_id = request.args.get('department_id', type=int)
+        
         staff_list = Staff.query.all()
         result = []
         
         for staff in staff_list:
+            # Only include available staff
+            if not staff.StaffAvailable:
+                continue
+                
             staff_dict = staff.to_dict()
             current_dept_assignment = StaffDepartment.query.filter_by(
                 StaffId=staff.StaffId, 
@@ -31,10 +38,17 @@ def get_all_staff():
                 staff_dict['DepartmentId'] = department.DepartmentId
                 staff_dict['DepartmentName'] = department.DepartmentName
                 staff_dict['Position'] = current_dept_assignment.Position
+                
+                # Filter by department if specified
+                if department_id and current_dept_assignment.DepartmentId != department_id:
+                    continue
             else:
                 staff_dict['DepartmentId'] = None
                 staff_dict['DepartmentName'] = None
                 staff_dict['Position'] = None
+                
+                # Skip staff without department if filtering by department
+                continue
                 
             result.append(staff_dict)
             

@@ -261,7 +261,7 @@ function editStaff(staffId) {
             $('#staff-role').val(staff.StaffRole);
             $('#department-id').val(staff.DepartmentId || '');
             $('#position').val(staff.Position || '');
-            $('#staff-available').prop('checked', staff.StaffAvailable);
+            $('#staff-available').prop('checked', staff.StaffAvailable === true || staff.StaffAvailable === 1);
             
             // For editing existing staff, hide department field as it should be managed through assignments
             if (staff.DepartmentId) {
@@ -307,7 +307,7 @@ function saveStaff() {
     const staffData = {
         StaffName: $('#staff-name').val(),
         StaffRole: $('#staff-role').val(),
-        StaffAvailable: $('#staff-available').is(':checked'),
+        StaffAvailable: $('#staff-available').is(':checked') ? 1 : 0,
     };
     
     // For new staff, include department information if provided

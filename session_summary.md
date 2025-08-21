@@ -108,3 +108,4 @@
 ## Files Modified
 - `config.py` - Enhanced configuration with validation
 - `his.service` - Updated environment variables and security
+### Some calculations (data summary) should be reviewed

@@ -6,7 +6,7 @@ from models import PatientDepartment, Patient, Department
 # Create Blueprint for patient departments API routes
 patient_depts_bp = Blueprint('patient_departments', __name__)
 
-@patient_depts_bp.route('/patients/<int:patient_id>/departments', methods=['GET'])
+@patient_depts_bp.route('/patients/<string:patient_id>/departments', methods=['GET'])
 def get_patient_departments(patient_id):
     """Get department history for a specific patient"""
     try:
@@ -55,7 +55,7 @@ def get_patient_departments(patient_id):
         print(f"Error in get_patient_departments: {e}")
         return jsonify({'error': f'Database error: {str(e)}'}), 500
 
-@patient_depts_bp.route('/patients/<int:patient_id>/department', methods=['POST'])
+@patient_depts_bp.route('/patients/<string:patient_id>/department', methods=['POST'])
 def assign_patient_department(patient_id):
     """Assign a patient to a department"""
     try:

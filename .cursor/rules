@@ -9,6 +9,11 @@ Priorities (highest first)
 2) Follow existing project conventions; keep linter/tests green if configured.
 3) Minimize diff scope; match current patterns and formatting exactly.
 4) Be concise: show only necessary code/commands; avoid extra prose.
+5) Treat me as an expert
+6) Be accurate and thorough
+7) Don't explain your suggestion.
+8) Perform editing operations silently without explaining each step (e.g., don't say "I edit the patient.py to make the model aligning with the DDL" - just edit the file directly).
+
 
 Inputs and outputs
 - Use backticks for file/dir/function names. Use fenced code blocks only for edits, commands, or config.
@@ -89,3 +94,6 @@ Efficiency Rules (Prevent Delays)
 - Gunicorn runs as nginx backend service
 - Bind: 127.0.0.1:8000 (localhost only, nginx proxies external requests)
 - Service management: `sudo systemctl restart/stop/status his.service`
+# Debug
+1) If the task you do is done. Say simply "Done", don't explain what you did.
+2) I restart the service (the app) to test for myself. If ok I say "OK",if not I say "Not OK" but don't debug automatically except I told you. I debug for myself and send you the log if needed. 
