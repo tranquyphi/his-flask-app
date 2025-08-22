@@ -59,7 +59,7 @@ def create_app(config_name=None):
         from models.VisitDrug import VisitDrug
         from models.VisitProc import VisitProc
         from models.VisitSign import VisitSign
-        from models.VisitStaff import VisitStaff
+        from models.Visit import VisitStaff
         from models.VisitTest import VisitTest
         # Template-related association models
         from models.TestTemplate import TestTemplate

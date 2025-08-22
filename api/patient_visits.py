@@ -6,7 +6,7 @@ from flask import Blueprint, jsonify, request
 from datetime import datetime
 from sqlalchemy import desc, asc
 from models_main import db
-from models import Patient, Visit, Department, Staff, VisitDiagnosis, PatientDepartment
+from models import Patient, Visit, Department, Staff, VisitDiagnosis, PatientDepartment, VisitStaff
 
 patient_visits_bp = Blueprint('patient_visits', __name__)
 
@@ -24,22 +24,15 @@ def get_patient_visits(patient_id):
             db.session.query(
                 Visit.VisitId,
                 Visit.PatientId, 
-                Visit.DepartmentId,
                 Visit.VisitPurpose,
-                Visit.VisitTime,
-                Visit.StaffId,
-                Department.DepartmentName,
-                Staff.StaffName,
-                Staff.StaffRole
+                Visit.VisitTime
             )
-            .join(Department, Department.DepartmentId == Visit.DepartmentId)
-            .join(Staff, Staff.StaffId == Visit.StaffId)
             .filter(Visit.PatientId == patient_id)
             .order_by(desc(Visit.VisitTime))
             .all()
         )
         
-        # Convert results to dictionaries
+        # Convert results to dictionaries and get related data
         visits_data = []
         for r in results:
             row_dict = dict(r._mapping)
@@ -47,6 +40,20 @@ def get_patient_visits(patient_id):
             # Format datetime for JSON serialization
             if row_dict.get('VisitTime'):
                 row_dict['VisitTime'] = row_dict['VisitTime'].isoformat()
+            
+            # Get staff information for this visit
+            visit_staff = VisitStaff.query.filter_by(VisitId=row_dict['VisitId']).all()
+            staff_info = []
+            for vs in visit_staff:
+                staff = Staff.query.get(vs.StaffId)
+                if staff:
+                    staff_info.append({
+                        'StaffId': staff.StaffId,
+                        'StaffName': staff.StaffName,
+                        'StaffRole': staff.StaffRole
+                    })
+            
+            row_dict['staff'] = staff_info
             
             # Get diagnoses for each visit
             diagnoses = VisitDiagnosis.query.filter_by(VisitId=row_dict['VisitId']).all()
@@ -87,54 +94,6 @@ def get_patient_visits_summary(patient_id):
         # Count total visits
         total_visits = db.session.query(Visit).filter(Visit.PatientId == patient_id).count()
         
-        # Count visits by department
-        dept_visits = (
-            db.session.query(
-                Department.DepartmentName,
-                db.func.count(Visit.VisitId).label('visit_count')
-            )
-            .join(Visit, Visit.DepartmentId == Visit.DepartmentId)
-            .filter(Visit.PatientId == patient_id)
-            .group_by(Department.DepartmentName)
-            .order_by(desc('visit_count'))
-            .all()
-        )
-        
-        # Count unique departments from both visits and department assignments
-        # This ensures we count departments even if patient has no visits
-        all_dept_assignments = (
-            db.session.query(
-                Department.DepartmentName,
-                db.func.count(PatientDepartment.id).label('assignment_count')
-            )
-            .join(PatientDepartment, PatientDepartment.DepartmentId == Department.DepartmentId)
-            .filter(PatientDepartment.PatientId == patient_id)
-            .group_by(Department.DepartmentName)
-            .order_by(desc('assignment_count'))
-            .all()
-        )
-        
-        # Combine both sources to get unique departments
-        unique_departments = set()
-        dept_visits_dict = {}
-        
-        # Add departments from visits
-        for dept in dept_visits:
-            unique_departments.add(dept.DepartmentName)
-            dept_visits_dict[dept.DepartmentName] = dept.visit_count
-        
-        # Add departments from assignments
-        for dept in all_dept_assignments:
-            unique_departments.add(dept.DepartmentName)
-            if dept.DepartmentName not in dept_visits_dict:
-                dept_visits_dict[dept.DepartmentName] = 0
-        
-        # Create final department visits list
-        final_dept_visits = [
-            {'department': dept_name, 'count': dept_visits_dict.get(dept_name, 0)}
-            for dept_name in sorted(unique_departments, key=lambda x: dept_visits_dict.get(x, 0), reverse=True)
-        ]
-        
         # Count visits by purpose
         purpose_visits = (
             db.session.query(
@@ -147,74 +106,38 @@ def get_patient_visits_summary(patient_id):
             .all()
         )
         
-        # Get first and most recent visit
-        first_visit = (
-            db.session.query(
-                Visit.VisitTime,
-                Visit.VisitPurpose,
-                Department.DepartmentName
-            )
-            .join(Department, Department.DepartmentId == Visit.DepartmentId)
-            .filter(Visit.PatientId == patient_id)
-            .order_by(asc(Visit.VisitTime))
-            .first()
-        )
-        
+        # Get latest visit
         latest_visit = (
-            db.session.query(
-                Visit.VisitTime,
-                Visit.VisitPurpose,
-                Department.DepartmentName
-            )
-            .join(Department, Department.DepartmentId == Visit.DepartmentId)
+            db.session.query(Visit)
             .filter(Visit.PatientId == patient_id)
             .order_by(desc(Visit.VisitTime))
             .first()
         )
         
-        # Common diagnoses
-        common_diagnoses = (
-            db.session.query(
-                VisitDiagnosis.ActualDiagnosis,
-                db.func.count(VisitDiagnosis.VisitId).label('diagnosis_count')
-            )
-            .join(Visit, Visit.VisitId == VisitDiagnosis.VisitId)
-            .filter(Visit.PatientId == patient_id)
-            .group_by(VisitDiagnosis.ActualDiagnosis)
-            .order_by(desc('diagnosis_count'))
-            .limit(5)
-            .all()
-        )
+        summary = {
+            'total_visits': total_visits,
+            'purpose_breakdown': [
+                {
+                    'purpose': row.VisitPurpose or 'Không xác định',
+                    'count': row.visit_count
+                } for row in purpose_visits
+            ],
+            'latest_visit': None
+        }
+        
+        if latest_visit:
+            summary['latest_visit'] = {
+                'VisitId': latest_visit.VisitId,
+                'VisitTime': latest_visit.VisitTime.isoformat() if latest_visit.VisitTime else None,
+                'VisitPurpose': latest_visit.VisitPurpose
+            }
         
         return jsonify({
             'patient': {
                 'PatientId': patient.PatientId,
-                'PatientName': patient.PatientName,
-                'PatientGender': patient.PatientGender,
-                'PatientAge': patient.PatientAge
+                'PatientName': patient.PatientName
             },
-            'visit_summary': {
-                'total_visits': total_visits,
-                'first_visit': {
-                    'time': first_visit.VisitTime.isoformat() if first_visit and first_visit.VisitTime else None,
-                    'purpose': first_visit.VisitPurpose if first_visit else None,
-                    'department': first_visit.DepartmentName if first_visit else None
-                },
-                'latest_visit': {
-                    'time': latest_visit.VisitTime.isoformat() if latest_visit and latest_visit.VisitTime else None,
-                    'purpose': latest_visit.VisitPurpose if latest_visit else None,
-                    'department': latest_visit.DepartmentName if latest_visit else None
-                }
-            },
-            'department_visits': final_dept_visits,
-            'purpose_visits': [
-                {'purpose': purpose.VisitPurpose, 'count': purpose.visit_count} 
-                for purpose in purpose_visits
-            ],
-            'common_diagnoses': [
-                {'diagnosis': diag.ActualDiagnosis, 'count': diag.diagnosis_count} 
-                for diag in common_diagnoses if diag.ActualDiagnosis
-            ]
+            'summary': summary
         })
         
     except Exception as e:
@@ -230,38 +153,32 @@ def get_patient_latest_visit(patient_id):
         if not patient:
             return jsonify({'error': 'Patient not found'}), 404
         
-        # Query most recent visit with related data
-        result = (
-            db.session.query(
-                Visit.VisitId,
-                Visit.PatientId, 
-                Visit.DepartmentId,
-                Visit.VisitPurpose,
-                Visit.VisitTime,
-                Visit.StaffId,
-                Department.DepartmentName,
-                Staff.StaffName,
-                Staff.StaffRole
-            )
-            .join(Department, Department.DepartmentId == Visit.DepartmentId)
-            .join(Staff, Staff.StaffId == Visit.StaffId)
+        # Get latest visit
+        latest_visit = (
+            db.session.query(Visit)
             .filter(Visit.PatientId == patient_id)
             .order_by(desc(Visit.VisitTime))
             .first()
         )
         
-        if not result:
-            return jsonify({
-                'patient': {
-                    'PatientId': patient.PatientId,
-                    'PatientName': patient.PatientName
-                },
-                'visit': None,
-                'message': 'No visits found for this patient'
-            })
+        if not latest_visit:
+            return jsonify({'error': 'No visits found for this patient'}), 404
         
-        # Convert result to dictionary
-        visit_data = dict(result._mapping)
+        visit_data = latest_visit.to_dict()
+        
+        # Get staff information for this visit
+        visit_staff = VisitStaff.query.filter_by(VisitId=latest_visit.VisitId).all()
+        staff_info = []
+        for vs in visit_staff:
+            staff = Staff.query.get(vs.StaffId)
+            if staff:
+                staff_info.append({
+                    'StaffId': staff.StaffId,
+                    'StaffName': staff.StaffName,
+                    'StaffRole': staff.StaffRole
+                })
+        
+        visit_data['staff'] = staff_info
         
         # Format datetime for JSON serialization
         if visit_data.get('VisitTime'):
@@ -300,22 +217,36 @@ def create_patient_visit(patient_id):
             return jsonify({'error': 'Patient not found'}), 404
         
         payload = request.get_json(force=True) or {}
-        required = ['DepartmentId', 'StaffId', 'VisitPurpose']
+        required = ['StaffIds', 'VisitPurpose']
         missing = [f for f in required if f not in payload]
         
         if missing:
             return jsonify({'error': f'Missing required fields: {", ".join(missing)}'}), 400
         
+        # Validate StaffIds
+        staff_ids = payload['StaffIds']
+        if not isinstance(staff_ids, list) or len(staff_ids) == 0:
+            return jsonify({'error': 'StaffIds must be a non-empty list'}), 400
+        
+        staff_list = Staff.query.filter(Staff.StaffId.in_(staff_ids)).all()
+        if len(staff_list) != len(staff_ids):
+            return jsonify({'error': 'One or more StaffIds not found'}), 404
+        
         # Create new visit
         new_visit = Visit(
             PatientId=patient_id,
-            DepartmentId=payload['DepartmentId'],
-            StaffId=payload['StaffId'],
             VisitPurpose=payload['VisitPurpose'],
             VisitTime=datetime.now()
         )
         
         db.session.add(new_visit)
+        db.session.flush()  # Get the VisitId
+        
+        # Create VisitStaff associations
+        for staff_id in staff_ids:
+            visit_staff = VisitStaff(VisitId=new_visit.VisitId, StaffId=staff_id)
+            db.session.add(visit_staff)
+        
         db.session.commit()
         
         # Add diagnosis if provided
@@ -329,25 +260,18 @@ def create_patient_visit(patient_id):
             db.session.commit()
         
         # Get complete visit data
-        result = (
-            db.session.query(
-                Visit.VisitId,
-                Visit.PatientId, 
-                Visit.DepartmentId,
-                Visit.VisitPurpose,
-                Visit.VisitTime,
-                Visit.StaffId,
-                Department.DepartmentName,
-                Staff.StaffName,
-                Staff.StaffRole
-            )
-            .join(Department, Department.DepartmentId == Visit.DepartmentId)
-            .join(Staff, Staff.StaffId == Visit.StaffId)
-            .filter(Visit.VisitId == new_visit.VisitId)
-            .first()
-        )
+        visit_data = new_visit.to_dict()
         
-        visit_data = dict(result._mapping)
+        # Add staff information
+        staff_info = []
+        for staff in staff_list:
+            staff_info.append({
+                'StaffId': staff.StaffId,
+                'StaffName': staff.StaffName,
+                'StaffRole': staff.StaffRole
+            })
+        
+        visit_data['staff'] = staff_info
         
         # Format datetime for JSON serialization
         if visit_data.get('VisitTime'):

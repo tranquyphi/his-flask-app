@@ -29,7 +29,7 @@ from .VisitImage import VisitImage
 from .VisitDrug import VisitDrug
 from .VisitProc import VisitProc
 from .VisitSign import VisitSign
-from .VisitStaff import VisitStaff
+from .Visit import VisitStaff
 from .VisitTest import VisitTest
 
 # Template-related association models

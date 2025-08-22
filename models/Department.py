@@ -22,7 +22,7 @@ class Department(db.Model):
                                      backref='department',
                                      lazy='dynamic')
                                      
-    visits = db.relationship('Visit', backref='department', lazy=True)
+    # visits = db.relationship('Visit', backref='department', lazy=True)  # Removed - visits no longer have DepartmentId
     templates = db.relationship('Template', backref='department', lazy=True)
     tests = db.relationship('Test', backref='in_charge_department', lazy=True)
     

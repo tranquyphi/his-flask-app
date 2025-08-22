@@ -23,7 +23,7 @@ class Staff(db.Model):
                                         backref='staff_member',
                                         lazy='dynamic')
     
-    visits = db.relationship('Visit', backref='attending_staff', lazy=True)
+    # visits = db.relationship('Visit', backref='attending_staff', lazy=True)  # Removed - visits no longer have StaffId
     
     @property
     def current_department(self):

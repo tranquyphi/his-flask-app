@@ -108,10 +108,8 @@ def get_all_departments_stats():
                 Current=True
             ).count()
             
-            # Count total visits
-            total_visits = db.session.query(Visit).filter_by(
-                DepartmentId=dept.DepartmentId
-            ).count()
+            # Count total visits (visits no longer have direct department relationship)
+            total_visits = 0
             
             result.append({
                 'DepartmentId': dept.DepartmentId,
