@@ -33,11 +33,24 @@ class Visit(db.Model):
     
     def to_dict(self):
         """Convert Visit to dictionary for JSON serialization"""
+        # Handle VisitTime safely - it might be a string or datetime
+        visit_time = None
+        if self.VisitTime:
+            print(f"DEBUG: VisitTime type: {type(self.VisitTime)}, value: {self.VisitTime}")
+            try:
+                if hasattr(self.VisitTime, 'isoformat'):
+                    visit_time = self.VisitTime.isoformat()
+                else:
+                    visit_time = str(self.VisitTime)
+            except Exception as e:
+                print(f"DEBUG: Error formatting VisitTime: {e}")
+                visit_time = str(self.VisitTime)
+        
         return {
             'VisitId': self.VisitId,
             'PatientId': self.PatientId,
             'VisitPurpose': self.VisitPurpose,
-            'VisitTime': self.VisitTime.isoformat() if self.VisitTime else None
+            'VisitTime': visit_time
         }
     
     def __repr__(self):

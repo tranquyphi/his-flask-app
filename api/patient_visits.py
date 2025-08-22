@@ -39,7 +39,10 @@ def get_patient_visits(patient_id):
             
             # Format datetime for JSON serialization
             if row_dict.get('VisitTime'):
-                row_dict['VisitTime'] = row_dict['VisitTime'].isoformat()
+                if hasattr(row_dict['VisitTime'], 'isoformat'):
+                    row_dict['VisitTime'] = row_dict['VisitTime'].isoformat()
+                else:
+                    row_dict['VisitTime'] = str(row_dict['VisitTime'])
             
             # Get staff information for this visit
             visit_staff = VisitStaff.query.filter_by(VisitId=row_dict['VisitId']).all()
@@ -128,7 +131,7 @@ def get_patient_visits_summary(patient_id):
         if latest_visit:
             summary['latest_visit'] = {
                 'VisitId': latest_visit.VisitId,
-                'VisitTime': latest_visit.VisitTime.isoformat() if latest_visit.VisitTime else None,
+                'VisitTime': latest_visit.VisitTime.isoformat() if latest_visit.VisitTime and hasattr(latest_visit.VisitTime, 'isoformat') else str(latest_visit.VisitTime) if latest_visit.VisitTime else None,
                 'VisitPurpose': latest_visit.VisitPurpose
             }
         
@@ -182,7 +185,10 @@ def get_patient_latest_visit(patient_id):
         
         # Format datetime for JSON serialization
         if visit_data.get('VisitTime'):
-            visit_data['VisitTime'] = visit_data['VisitTime'].isoformat()
+            if hasattr(visit_data['VisitTime'], 'isoformat'):
+                visit_data['VisitTime'] = visit_data['VisitTime'].isoformat()
+            else:
+                visit_data['VisitTime'] = str(visit_data['VisitTime'])
         
         # Get diagnoses for the visit
         diagnoses = VisitDiagnosis.query.filter_by(VisitId=visit_data['VisitId']).all()
@@ -275,7 +281,10 @@ def create_patient_visit(patient_id):
         
         # Format datetime for JSON serialization
         if visit_data.get('VisitTime'):
-            visit_data['VisitTime'] = visit_data['VisitTime'].isoformat()
+            if hasattr(visit_data['VisitTime'], 'isoformat'):
+                visit_data['VisitTime'] = visit_data['VisitTime'].isoformat()
+            else:
+                visit_data['VisitTime'] = str(visit_data['VisitTime'])
         
         return jsonify({
             'message': 'Visit created successfully',
